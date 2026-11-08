@@ -196,6 +196,12 @@
     'st.fail': ['FEIL', 'FAIL'],
     'st.fuzzPending': ['T14 (fuzz) kjøres kun med knappen under.', 'T14 (fuzz) only runs with the button below.'],
 
+    'box.B1': ['Liten', 'Small'],
+    'box.B2': ['Flat', 'Flat'],
+    'box.B3': ['Medium', 'Medium'],
+    'box.B4': ['Stor', 'Large'],
+    'box.B5': ['Ekstra stor', 'Extra large'],
+    'box.B6': ['Lang', 'Long'],
     'unit.cm': ['cm', 'cm'],
     'unit.kg': ['kg', 'kg'],
     'unit.l': ['L', 'L']

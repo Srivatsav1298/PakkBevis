@@ -417,6 +417,12 @@ tbody tr:hover td{background:#f3f7fc}
     'st.fail': ['FEIL', 'FAIL'],
     'st.fuzzPending': ['T14 (fuzz) kjøres kun med knappen under.', 'T14 (fuzz) only runs with the button below.'],
 
+    'box.B1': ['Liten', 'Small'],
+    'box.B2': ['Flat', 'Flat'],
+    'box.B3': ['Medium', 'Medium'],
+    'box.B4': ['Stor', 'Large'],
+    'box.B5': ['Ekstra stor', 'Extra large'],
+    'box.B6': ['Lang', 'Long'],
     'unit.cm': ['cm', 'cm'],
     'unit.kg': ['kg', 'kg'],
     'unit.l': ['L', 'L']
@@ -1491,7 +1497,7 @@ tbody tr:hover td{background:#f3f7fc}
     var it = PB.getItem(id, {});
     return it ? (S.lang === 'NO' ? it.no : it.en) : id;
   }
-  function boxLabel(b) { return b.id + ' ' + b.name; }
+  function boxLabel(b) { var k = 'box.' + b.id; return b.id + ' ' + (I18N[S.lang][k] || b.name); }
   function boxSize(b) { return b.L + '×' + b.W + '×' + b.H; }
 
   // -------------------------------------------------------------------------- DOM

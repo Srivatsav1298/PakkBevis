@@ -44,7 +44,7 @@
     var it = PB.getItem(id, {});
     return it ? (S.lang === 'NO' ? it.no : it.en) : id;
   }
-  function boxLabel(b) { return b.id + ' ' + b.name; }
+  function boxLabel(b) { var k = 'box.' + b.id; return b.id + ' ' + (I18N[S.lang][k] || b.name); }
   function boxSize(b) { return b.L + '×' + b.W + '×' + b.H; }
 
   // -------------------------------------------------------------------------- DOM
