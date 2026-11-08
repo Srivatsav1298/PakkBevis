@@ -111,7 +111,7 @@
 
   // ================================================================== ENGINE
   function buildUnits(lines, opts) {
-    var units = [], counters = {}, margin = (opts && opts.margin) > 0 ? opts.margin : 0;
+    var units = [], counters = {}, margin = Number(opts && opts.margin) || 0;
     normLines(lines).forEach(function (l) {
       var item = PB.getItem(l.sku, opts);
       if (!item) throw new Error('unknown item ' + l.sku);
@@ -246,7 +246,7 @@
     var failures = [];
     var o = opts || {};
     var tol = 1e-7;
-    var mg = (o.margin && o.margin > 0) ? o.margin : 0;
+    var mg = Number(o.margin) || 0;   // signed: + extra room, - tighter packing
     var pad = PB.ASSUMPTIONS.fragilePad;
 
     // expected multiset and per-item data, derived from scratch
@@ -375,12 +375,33 @@
     return { box: box, ok: true, placements: pk.placements, strategy: pk.strategy, metrics: m, verify: vf };
   }
 
+  /* A negative margin ("pack tighter") may never shrink an item below 0.5 cm on any axis:
+   * clamp it once per order here, so engine, verifier and pack steps all use the same value. */
+  function effectiveMarginOpts(lines, opts) {
+    var m = Number(opts.margin) || 0;
+    if (m < 0) {
+      var minDim = Infinity, i, it;
+      for (i = 0; i < lines.length; i++) {
+        it = PB.getItem(lines[i].sku, opts);
+        if (it) minDim = Math.min(minDim, it.L, it.W, it.H);
+      }
+      if (isFinite(minDim)) m = Math.max(m, 0.5 - minDim);
+      if (m > 0) m = 0;
+    }
+    if (m === (Number(opts.margin) || 0)) return opts;
+    var o = {}, k;
+    for (k in opts) o[k] = opts[k];
+    o.margin = m;
+    return o;
+  }
+
   PB.recommend = function (orderLines, opts) {
     opts = opts || {};
     var lines = normLines(orderLines);
+    opts = effectiveMarginOpts(lines, opts);
     var res = { state: null, lines: lines, missing: [], provisional: [], tooLarge: [], recommended: null, smallest: null,
       reasonCode: null, baseline: null, savingsNOK: null, savingsPct: null, airBefore: null, airAfter: null,
-      rejected: [], margin: opts.margin > 0 ? opts.margin : 0 };
+      rejected: [], margin: Number(opts.margin) || 0 };
     var li, item;
     for (li = 0; li < lines.length; li++) {
       item = PB.getItem(lines[li].sku, opts);
@@ -520,17 +541,28 @@
   PB.comboKey = function (lines) {
     return normLines(lines).map(function (l) { return l.sku + ':' + l.qty; }).sort().join(',');
   };
-  PB.MAX_REJECTS = 3;
-  PB.marginFor = function (rejects, lines) {
-    var n = (rejects && rejects[PB.comboKey(lines)]) || 0;
-    return Math.min(PB.MAX_REJECTS, n) * 1.0;
-  };
-  PB.addReject = function (rejects, lines) {
+  PB.MAX_REJECTS = 3;   // "did not fit": up to +3 cm extra room
+  PB.MAX_TIGHT = 2;     // "too big": up to -2 cm tighter packing
+  function stepOf(rejects, lines) {
+    var n = Number(rejects && rejects[PB.comboKey(lines)]) || 0;
+    return Math.max(-PB.MAX_TIGHT, Math.min(PB.MAX_REJECTS, Math.round(n)));
+  }
+  /* Signed margin in cm for this item combination: > 0 more room, < 0 tighter. */
+  PB.marginFor = function (rejects, lines) { return stepOf(rejects, lines) * 1.0 + 0; };
+  function setStep(rejects, lines, n) {
     var out = {}, k;
     for (k in (rejects || {})) out[k] = rejects[k];
     var key = PB.comboKey(lines);
-    out[key] = Math.min(PB.MAX_REJECTS, (out[key] || 0) + 1);
+    if (n === 0) delete out[key]; else out[key] = n;
     return out;
+  }
+  /* "Did not fit / too tight": one step towards more room (undoes a tighter step first). */
+  PB.addReject = function (rejects, lines) {
+    return setStep(rejects, lines, Math.min(PB.MAX_REJECTS, stepOf(rejects, lines) + 1));
+  };
+  /* "Too big / smaller works": one step towards tighter packing (undoes extra room first). */
+  PB.addTight = function (rejects, lines) {
+    return setStep(rejects, lines, Math.max(-PB.MAX_TIGHT, stepOf(rejects, lines) - 1));
   };
 
   // ======================================================== MISSING DIMENSIONS
@@ -604,7 +636,7 @@
   // ============================================================== PACK STEPS
   /* Ordered by z then weight desc. Dims shown are the real item dims in placed orientation. */
   PB.packSteps = function (placements, opts) {
-    var margin = (opts && opts.margin) > 0 ? opts.margin : 0;
+    var margin = Number(opts && opts.margin) || 0;
     var zs = [];
     placements.forEach(function (p) { if (zs.indexOf(p.z) < 0) zs.push(p.z); });
     zs.sort(function (a, b) { return a - b; });

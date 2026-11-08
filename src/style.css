@@ -118,10 +118,11 @@ details.card>summary{padding:2px 0}
 /* action bar */
 .actionbar{position:sticky;bottom:0;z-index:20;background:var(--card);border:1px solid var(--line);border-top:3px solid var(--accent);
 border-radius:var(--radius);padding:10px;margin:16px 0;box-shadow:0 -6px 20px rgba(17,29,43,.12);bottom:calc(0px + env(safe-area-inset-bottom))}
-.actionbar .row{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:stretch}
-.actionbar .row>button{width:100%;flex:none}
+.actionbar .row{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:6px;align-items:stretch}
+.actionbar .row>button{width:100%;flex:none;padding-left:6px;padding-right:6px;font-size:.95rem}
+button.neutral{border-color:var(--mute);color:var(--ink)}
 .actionbar .msg{margin:8px 0 0}
-@media (min-width:700px){.actionbar .row{grid-template-columns:minmax(0,320px) minmax(0,320px);justify-content:center}}
+@media (min-width:700px){.actionbar .row{grid-template-columns:repeat(3,minmax(0,220px));justify-content:center;gap:8px}}
 
 /* queue + import */
 .queue button.qi{display:block;width:100%;text-align:left;margin:6px 0;font-weight:500}
@@ -174,13 +175,14 @@ header.top{padding-top:14px}
 .card{margin:12px 0}
 dl.m.big{grid-template-columns:repeat(3,1fr)}
 .boxname.hero{font-size:clamp(1.8rem,9vw,2.3rem)}
-.actionbar .row{grid-template-columns:1fr 1fr}
+.actionbar .row{grid-template-columns:1.2fr 1fr 1fr}
 }
 @media (max-width:380px){
 #app{padding-left:10px;padding-right:10px}
 nav.tabs{padding-left:10px;padding-right:10px;margin-left:-10px;margin-right:-10px}
 button{padding-left:10px;padding-right:10px}
-.actionbar .row{grid-template-columns:1fr}
+.actionbar .row{grid-template-columns:1.1fr 1fr 1fr}
+.actionbar .row>button{font-size:.88rem}
 .boxname.hero{font-size:1.75rem}
 dl.m.big dd{font-size:1.1rem}
 }

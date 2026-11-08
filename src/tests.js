@@ -222,6 +222,24 @@
       ok(h.nok > 0 && h.litres > 0 && h.n >= 4, 'headline ' + JSON.stringify(h));
     });
 
+    def('T24', 'learning both ways: too big goes tighter, did not fit goes back, all verified', function () {
+      var ls = lines('O1001'), o0 = { dims: DIMS15 };
+      eq(PB.marginFor({}, ls), 0);
+      var t1 = PB.addTight({}, ls);
+      eq(PB.marginFor(t1, ls), -1);
+      var t3 = PB.addTight(PB.addTight(t1, ls), ls);
+      eq(PB.marginFor(t3, ls), -2);                         // floor: never tighter than -2 cm
+      eq(PB.marginFor(PB.addReject(t1, ls), ls), 0);        // "did not fit" first undoes a tighter step
+      eq(PB.marginFor(PB.addTight(PB.addReject({}, ls), ls), ls), 0);   // and "too big" undoes extra room
+      var r0 = PB.recommend(ls, o0), r1 = PB.recommend(ls, { dims: DIMS15, margin: -1 });
+      eq(r1.state, 'GREEN_VERIFIED'); eq(r1.margin, -1);
+      ok(PB.verifyPacking(r1.recommended.box, r1.recommended.placements, ls, { dims: DIMS15, margin: -1 }).pass, 'verified at -1');
+      ok(r1.recommended.box.L * r1.recommended.box.W * r1.recommended.box.H <= r0.recommended.box.L * r0.recommended.box.W * r0.recommended.box.H, 'tighter never needs a bigger box');
+      var tiny = [{ sku: 'SKU15', qty: 1 }], rt = PB.recommend(tiny, { dims: DIMS15, margin: -2 });
+      ok(rt.margin >= -2.5 && rt.margin < 0, 'tiny item clamps the margin: ' + rt.margin);   // 3 cm item keeps >= 0.5 cm
+      ok(PB.verifyPacking(rt.recommended.box, rt.recommended.placements, tiny, { dims: DIMS15, margin: rt.margin }).pass, 'verified when clamped');
+    });
+
     return results;
   }
 

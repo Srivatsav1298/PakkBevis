@@ -113,7 +113,7 @@
     out.push(h('header', { 'class': 'top' }, [
       h('div', {}, [h('h1', { text: 'PakkBevis' }), h('p', { 'class': 'tag', text: t('app.tagline') })]),
       h('div', { 'class': 'langs', role: 'group', 'aria-label': t('lang.label') }, LANGS.map(function (l) {
-        return h('button', { type: 'button', 'class': 'lang', text: l, 'aria-pressed': String(S.lang === l), onclick: function () { S.lang = l; sSet('pakkbevis_lang', l); render(); } });
+        return h('button', { type: 'button', 'class': 'lang', text: l, 'aria-pressed': String(S.lang === l), onclick: function () { S.lang = l; sSet('pakkbevis_lang', l); S.learnMsg = null; render(); } });
       }))
     ]));
     out.push(h('nav', { 'class': 'tabs', role: 'tablist' }, ['pack', 'leader', 'selftest'].map(function (k) {
@@ -344,6 +344,7 @@
     kids.push(h('p', { 'class': 'small', text: small.map(function (d) { return t(d[0]) + ' ' + d[1]; }).join(' · ') }));
     if (rec.savingsNOK === null) kids.push(h('p', { 'class': 'small', text: t('result.noBaseline') }));
     if (rec.margin > 0) kids.push(h('p', { 'class': 'msg', text: t('result.margin', { n: f(rec.margin) }) }));
+    else if (rec.margin < 0) kids.push(h('p', { 'class': 'msg', text: t('result.tighter', { n: f(-rec.margin) }) }));
     if (rec.state === 'AMBER_PROVISIONAL' && !S.tnp) kids.push(h('p', { 'class': 'msg err', text: t('dims.provisional') }));
     kids.push(h('div', { 'class': 'result-grid' }, [
       h('div', { 'class': 'result-main' }, [stepsBlock(r, rec, opts, key)]),
@@ -426,18 +427,34 @@
     render();
     window.scrollTo(0, 0);
   }
+  function boxIdOf(lines) {
+    try { var r = PB.recommend(lines, optsFor(lines)); return r.recommended ? r.recommended.box : null; } catch (e) { return null; }
+  }
+  /* One learning step. dir > 0 = "did not fit" (more room), dir < 0 = "too big" (tighter).
+   * Re-solves, then tells the packer in plain words what changed. */
+  function learnStep(lines, dir) {
+    var before = PB.marginFor(S.rejects, lines), b0 = boxIdOf(lines);
+    S.rejects = dir > 0 ? PB.addReject(S.rejects, lines) : PB.addTight(S.rejects, lines);
+    persistRejects(); S.okKey = null;
+    var after = PB.marginFor(S.rejects, lines), b1 = boxIdOf(lines), txt;
+    if (after === before) txt = t(dir > 0 ? 'learn.maxMargin' : 'learn.tightMin', { n: f(Math.abs(after)) });
+    else if (after === 0) txt = t('learn.reverted');
+    else txt = after > 0 ? t('learn.applied', { n: f(after) }) : t('learn.tighter', { n: f(-after) });
+    if (b0 && b1) txt += ' ' + (b0.id !== b1.id ? t('learn.boxChanged', { from: boxLabel(b0), to: boxLabel(b1) }) : t('learn.boxSame', { box: boxLabel(b1) }));
+    S.learnMsg = { ok: true, text: txt };
+    render();
+  }
   function actionBar(lines) {
     var margin = PB.marginFor(S.rejects, lines);
     var kids = [h('div', { 'class': 'row' }, [
       btn('btn.fit', 'primary', confirmFit),
-      btn('btn.nofit', 'danger', function () {
-        S.rejects = PB.addReject(S.rejects, lines); persistRejects(); S.okKey = null;
-        S.learnMsg = { ok: false }; render();
-      })
+      btn('btn.nofit', 'danger', function () { learnStep(lines, 1); }),
+      btn('btn.toobig', 'neutral', function () { learnStep(lines, -1); })
     ])];
     var lm = S.learnMsg;
-    if (lm) kids.push(h('p', { 'class': 'msg ok', role: 'status', text: lm.ok ? lm.text : t('learn.applied', { n: f(PB.marginFor(S.rejects, lines)) }) }));
+    if (lm) kids.push(h('p', { 'class': 'msg ok', role: 'status', text: lm.text }));
     else if (margin > 0) kids.push(h('p', { 'class': 'msg ok', text: t('learn.applied', { n: f(margin) }) }));
+    else if (margin < 0) kids.push(h('p', { 'class': 'msg ok', text: t('learn.tighter', { n: f(-margin) }) }));
     return h('div', { 'class': 'actionbar' }, kids);
   }
 

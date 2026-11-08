@@ -127,10 +127,11 @@ details.card>summary{padding:2px 0}
 /* action bar */
 .actionbar{position:sticky;bottom:0;z-index:20;background:var(--card);border:1px solid var(--line);border-top:3px solid var(--accent);
 border-radius:var(--radius);padding:10px;margin:16px 0;box-shadow:0 -6px 20px rgba(17,29,43,.12);bottom:calc(0px + env(safe-area-inset-bottom))}
-.actionbar .row{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:stretch}
-.actionbar .row>button{width:100%;flex:none}
+.actionbar .row{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:6px;align-items:stretch}
+.actionbar .row>button{width:100%;flex:none;padding-left:6px;padding-right:6px;font-size:.95rem}
+button.neutral{border-color:var(--mute);color:var(--ink)}
 .actionbar .msg{margin:8px 0 0}
-@media (min-width:700px){.actionbar .row{grid-template-columns:minmax(0,320px) minmax(0,320px);justify-content:center}}
+@media (min-width:700px){.actionbar .row{grid-template-columns:repeat(3,minmax(0,220px));justify-content:center;gap:8px}}
 
 /* queue + import */
 .queue button.qi{display:block;width:100%;text-align:left;margin:6px 0;font-weight:500}
@@ -183,13 +184,14 @@ header.top{padding-top:14px}
 .card{margin:12px 0}
 dl.m.big{grid-template-columns:repeat(3,1fr)}
 .boxname.hero{font-size:clamp(1.8rem,9vw,2.3rem)}
-.actionbar .row{grid-template-columns:1fr 1fr}
+.actionbar .row{grid-template-columns:1.2fr 1fr 1fr}
 }
 @media (max-width:380px){
 #app{padding-left:10px;padding-right:10px}
 nav.tabs{padding-left:10px;padding-right:10px;margin-left:-10px;margin-right:-10px}
 button{padding-left:10px;padding-right:10px}
-.actionbar .row{grid-template-columns:1fr}
+.actionbar .row{grid-template-columns:1.1fr 1fr 1fr}
+.actionbar .row>button{font-size:.88rem}
 .boxname.hero{font-size:1.75rem}
 dl.m.big dd{font-size:1.1rem}
 }
@@ -306,6 +308,14 @@ tbody tr:hover td{background:#f3f7fc}
 
     'btn.fit': ['Passet', 'It fit'],
     'btn.nofit': ['Passet ikke', 'Did not fit'],
+    'btn.toobig': ['For stor', 'Too big'],
+    'result.tighter': ['Tettere pakking: {n} cm', 'Tighter packing: {n} cm'],
+    'learn.tighter': ['Lært: denne kombinasjonen pakkes {n} cm tettere.', 'Learned: this combination is packed {n} cm tighter.'],
+    'learn.reverted': ['Margin er tilbake til 0 cm.', 'Margin is back to 0 cm.'],
+    'learn.tightMin': ['Kan ikke pakkes tettere enn {n} cm.', 'Cannot pack tighter than {n} cm.'],
+    'learn.maxMargin': ['Maks ekstra margin ({n} cm) er nådd.', 'Maximum extra margin ({n} cm) reached.'],
+    'learn.boxChanged': ['Ny anbefaling: {to} (var {from}).', 'New recommendation: {to} (was {from}).'],
+    'learn.boxSame': ['Samme eske ({box}) er fortsatt best.', 'The same box ({box}) is still best.'],
     'learn.applied': ['Lært: denne kombinasjonen får {n} cm ekstra margin.', 'Learned: this combination gets {n} cm extra margin.'],
     'packer.wait': ['Foreslått – prøv eska og bekreft under', 'Suggested – try the box, then confirm below'],
     'packer.done': ['✓ Bekreftet av pakker', '✓ Confirmed by packer'],
@@ -550,7 +560,7 @@ tbody tr:hover td{background:#f3f7fc}
 
   // ================================================================== ENGINE
   function buildUnits(lines, opts) {
-    var units = [], counters = {}, margin = (opts && opts.margin) > 0 ? opts.margin : 0;
+    var units = [], counters = {}, margin = Number(opts && opts.margin) || 0;
     normLines(lines).forEach(function (l) {
       var item = PB.getItem(l.sku, opts);
       if (!item) throw new Error('unknown item ' + l.sku);
@@ -685,7 +695,7 @@ tbody tr:hover td{background:#f3f7fc}
     var failures = [];
     var o = opts || {};
     var tol = 1e-7;
-    var mg = (o.margin && o.margin > 0) ? o.margin : 0;
+    var mg = Number(o.margin) || 0;   // signed: + extra room, - tighter packing
     var pad = PB.ASSUMPTIONS.fragilePad;
 
     // expected multiset and per-item data, derived from scratch
@@ -814,12 +824,33 @@ tbody tr:hover td{background:#f3f7fc}
     return { box: box, ok: true, placements: pk.placements, strategy: pk.strategy, metrics: m, verify: vf };
   }
 
+  /* A negative margin ("pack tighter") may never shrink an item below 0.5 cm on any axis:
+   * clamp it once per order here, so engine, verifier and pack steps all use the same value. */
+  function effectiveMarginOpts(lines, opts) {
+    var m = Number(opts.margin) || 0;
+    if (m < 0) {
+      var minDim = Infinity, i, it;
+      for (i = 0; i < lines.length; i++) {
+        it = PB.getItem(lines[i].sku, opts);
+        if (it) minDim = Math.min(minDim, it.L, it.W, it.H);
+      }
+      if (isFinite(minDim)) m = Math.max(m, 0.5 - minDim);
+      if (m > 0) m = 0;
+    }
+    if (m === (Number(opts.margin) || 0)) return opts;
+    var o = {}, k;
+    for (k in opts) o[k] = opts[k];
+    o.margin = m;
+    return o;
+  }
+
   PB.recommend = function (orderLines, opts) {
     opts = opts || {};
     var lines = normLines(orderLines);
+    opts = effectiveMarginOpts(lines, opts);
     var res = { state: null, lines: lines, missing: [], provisional: [], tooLarge: [], recommended: null, smallest: null,
       reasonCode: null, baseline: null, savingsNOK: null, savingsPct: null, airBefore: null, airAfter: null,
-      rejected: [], margin: opts.margin > 0 ? opts.margin : 0 };
+      rejected: [], margin: Number(opts.margin) || 0 };
     var li, item;
     for (li = 0; li < lines.length; li++) {
       item = PB.getItem(lines[li].sku, opts);
@@ -959,17 +990,28 @@ tbody tr:hover td{background:#f3f7fc}
   PB.comboKey = function (lines) {
     return normLines(lines).map(function (l) { return l.sku + ':' + l.qty; }).sort().join(',');
   };
-  PB.MAX_REJECTS = 3;
-  PB.marginFor = function (rejects, lines) {
-    var n = (rejects && rejects[PB.comboKey(lines)]) || 0;
-    return Math.min(PB.MAX_REJECTS, n) * 1.0;
-  };
-  PB.addReject = function (rejects, lines) {
+  PB.MAX_REJECTS = 3;   // "did not fit": up to +3 cm extra room
+  PB.MAX_TIGHT = 2;     // "too big": up to -2 cm tighter packing
+  function stepOf(rejects, lines) {
+    var n = Number(rejects && rejects[PB.comboKey(lines)]) || 0;
+    return Math.max(-PB.MAX_TIGHT, Math.min(PB.MAX_REJECTS, Math.round(n)));
+  }
+  /* Signed margin in cm for this item combination: > 0 more room, < 0 tighter. */
+  PB.marginFor = function (rejects, lines) { return stepOf(rejects, lines) * 1.0 + 0; };
+  function setStep(rejects, lines, n) {
     var out = {}, k;
     for (k in (rejects || {})) out[k] = rejects[k];
     var key = PB.comboKey(lines);
-    out[key] = Math.min(PB.MAX_REJECTS, (out[key] || 0) + 1);
+    if (n === 0) delete out[key]; else out[key] = n;
     return out;
+  }
+  /* "Did not fit / too tight": one step towards more room (undoes a tighter step first). */
+  PB.addReject = function (rejects, lines) {
+    return setStep(rejects, lines, Math.min(PB.MAX_REJECTS, stepOf(rejects, lines) + 1));
+  };
+  /* "Too big / smaller works": one step towards tighter packing (undoes extra room first). */
+  PB.addTight = function (rejects, lines) {
+    return setStep(rejects, lines, Math.max(-PB.MAX_TIGHT, stepOf(rejects, lines) - 1));
   };
 
   // ======================================================== MISSING DIMENSIONS
@@ -1043,7 +1085,7 @@ tbody tr:hover td{background:#f3f7fc}
   // ============================================================== PACK STEPS
   /* Ordered by z then weight desc. Dims shown are the real item dims in placed orientation. */
   PB.packSteps = function (placements, opts) {
-    var margin = (opts && opts.margin) > 0 ? opts.margin : 0;
+    var margin = Number(opts && opts.margin) || 0;
     var zs = [];
     placements.forEach(function (p) { if (zs.indexOf(p.z) < 0) zs.push(p.z); });
     zs.sort(function (a, b) { return a - b; });
@@ -1341,6 +1383,24 @@ tbody tr:hover td{background:#f3f7fc}
       ok(h.nok > 0 && h.litres > 0 && h.n >= 4, 'headline ' + JSON.stringify(h));
     });
 
+    def('T24', 'learning both ways: too big goes tighter, did not fit goes back, all verified', function () {
+      var ls = lines('O1001'), o0 = { dims: DIMS15 };
+      eq(PB.marginFor({}, ls), 0);
+      var t1 = PB.addTight({}, ls);
+      eq(PB.marginFor(t1, ls), -1);
+      var t3 = PB.addTight(PB.addTight(t1, ls), ls);
+      eq(PB.marginFor(t3, ls), -2);                         // floor: never tighter than -2 cm
+      eq(PB.marginFor(PB.addReject(t1, ls), ls), 0);        // "did not fit" first undoes a tighter step
+      eq(PB.marginFor(PB.addTight(PB.addReject({}, ls), ls), ls), 0);   // and "too big" undoes extra room
+      var r0 = PB.recommend(ls, o0), r1 = PB.recommend(ls, { dims: DIMS15, margin: -1 });
+      eq(r1.state, 'GREEN_VERIFIED'); eq(r1.margin, -1);
+      ok(PB.verifyPacking(r1.recommended.box, r1.recommended.placements, ls, { dims: DIMS15, margin: -1 }).pass, 'verified at -1');
+      ok(r1.recommended.box.L * r1.recommended.box.W * r1.recommended.box.H <= r0.recommended.box.L * r0.recommended.box.W * r0.recommended.box.H, 'tighter never needs a bigger box');
+      var tiny = [{ sku: 'SKU15', qty: 1 }], rt = PB.recommend(tiny, { dims: DIMS15, margin: -2 });
+      ok(rt.margin >= -2.5 && rt.margin < 0, 'tiny item clamps the margin: ' + rt.margin);   // 3 cm item keeps >= 0.5 cm
+      ok(PB.verifyPacking(rt.recommended.box, rt.recommended.placements, tiny, { dims: DIMS15, margin: rt.margin }).pass, 'verified when clamped');
+    });
+
     return results;
   }
 
@@ -1566,7 +1626,7 @@ tbody tr:hover td{background:#f3f7fc}
     out.push(h('header', { 'class': 'top' }, [
       h('div', {}, [h('h1', { text: 'PakkBevis' }), h('p', { 'class': 'tag', text: t('app.tagline') })]),
       h('div', { 'class': 'langs', role: 'group', 'aria-label': t('lang.label') }, LANGS.map(function (l) {
-        return h('button', { type: 'button', 'class': 'lang', text: l, 'aria-pressed': String(S.lang === l), onclick: function () { S.lang = l; sSet('pakkbevis_lang', l); render(); } });
+        return h('button', { type: 'button', 'class': 'lang', text: l, 'aria-pressed': String(S.lang === l), onclick: function () { S.lang = l; sSet('pakkbevis_lang', l); S.learnMsg = null; render(); } });
       }))
     ]));
     out.push(h('nav', { 'class': 'tabs', role: 'tablist' }, ['pack', 'leader', 'selftest'].map(function (k) {
@@ -1797,6 +1857,7 @@ tbody tr:hover td{background:#f3f7fc}
     kids.push(h('p', { 'class': 'small', text: small.map(function (d) { return t(d[0]) + ' ' + d[1]; }).join(' · ') }));
     if (rec.savingsNOK === null) kids.push(h('p', { 'class': 'small', text: t('result.noBaseline') }));
     if (rec.margin > 0) kids.push(h('p', { 'class': 'msg', text: t('result.margin', { n: f(rec.margin) }) }));
+    else if (rec.margin < 0) kids.push(h('p', { 'class': 'msg', text: t('result.tighter', { n: f(-rec.margin) }) }));
     if (rec.state === 'AMBER_PROVISIONAL' && !S.tnp) kids.push(h('p', { 'class': 'msg err', text: t('dims.provisional') }));
     kids.push(h('div', { 'class': 'result-grid' }, [
       h('div', { 'class': 'result-main' }, [stepsBlock(r, rec, opts, key)]),
@@ -1879,18 +1940,34 @@ tbody tr:hover td{background:#f3f7fc}
     render();
     window.scrollTo(0, 0);
   }
+  function boxIdOf(lines) {
+    try { var r = PB.recommend(lines, optsFor(lines)); return r.recommended ? r.recommended.box : null; } catch (e) { return null; }
+  }
+  /* One learning step. dir > 0 = "did not fit" (more room), dir < 0 = "too big" (tighter).
+   * Re-solves, then tells the packer in plain words what changed. */
+  function learnStep(lines, dir) {
+    var before = PB.marginFor(S.rejects, lines), b0 = boxIdOf(lines);
+    S.rejects = dir > 0 ? PB.addReject(S.rejects, lines) : PB.addTight(S.rejects, lines);
+    persistRejects(); S.okKey = null;
+    var after = PB.marginFor(S.rejects, lines), b1 = boxIdOf(lines), txt;
+    if (after === before) txt = t(dir > 0 ? 'learn.maxMargin' : 'learn.tightMin', { n: f(Math.abs(after)) });
+    else if (after === 0) txt = t('learn.reverted');
+    else txt = after > 0 ? t('learn.applied', { n: f(after) }) : t('learn.tighter', { n: f(-after) });
+    if (b0 && b1) txt += ' ' + (b0.id !== b1.id ? t('learn.boxChanged', { from: boxLabel(b0), to: boxLabel(b1) }) : t('learn.boxSame', { box: boxLabel(b1) }));
+    S.learnMsg = { ok: true, text: txt };
+    render();
+  }
   function actionBar(lines) {
     var margin = PB.marginFor(S.rejects, lines);
     var kids = [h('div', { 'class': 'row' }, [
       btn('btn.fit', 'primary', confirmFit),
-      btn('btn.nofit', 'danger', function () {
-        S.rejects = PB.addReject(S.rejects, lines); persistRejects(); S.okKey = null;
-        S.learnMsg = { ok: false }; render();
-      })
+      btn('btn.nofit', 'danger', function () { learnStep(lines, 1); }),
+      btn('btn.toobig', 'neutral', function () { learnStep(lines, -1); })
     ])];
     var lm = S.learnMsg;
-    if (lm) kids.push(h('p', { 'class': 'msg ok', role: 'status', text: lm.ok ? lm.text : t('learn.applied', { n: f(PB.marginFor(S.rejects, lines)) }) }));
+    if (lm) kids.push(h('p', { 'class': 'msg ok', role: 'status', text: lm.text }));
     else if (margin > 0) kids.push(h('p', { 'class': 'msg ok', text: t('learn.applied', { n: f(margin) }) }));
+    else if (margin < 0) kids.push(h('p', { 'class': 'msg ok', text: t('learn.tighter', { n: f(-margin) }) }));
     return h('div', { 'class': 'actionbar' }, kids);
   }
 

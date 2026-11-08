@@ -92,6 +92,20 @@ function ok(c, m) { if (c) { oks++; console.log('  ok   ' + m); } else { fails.p
   ok(/SKU03:1,SKU04:1,SKU06:1/.test(stored) && /:1/.test(stored), 'reject stored: ' + stored);
   await reset(p);
 
+  console.log('== learning (For stor = pack tighter)');
+  await p.selectOption('#orderSel', 'O1001');
+  ok(/B3 Medium/.test(await p.innerText('main')), 'O1001 starts on B3 Medium');
+  await p.click('.actionbar >> text=For stor');
+  var tt = await p.innerText('main');
+  ok(/Lært: denne kombinasjonen pakkes 1,0 cm tettere/.test(tt) && /Ny anbefaling: B2 Flat \(var B3 Medium\)/.test(tt), 'too big -> tighter and smaller box B2: ' + tt.slice(0, 0));
+  ok(/Maskinkontrollert ✓/.test(tt) && /Tettere pakking: 1,0 cm/.test(tt), 'still verified, result shows tighter packing');
+  await p.click('.actionbar >> text=Passet ikke');
+  var tb = await p.innerText('main');
+  ok(/Margin er tilbake til 0 cm/.test(tb) && /B3 Medium/.test(tb), 'did not fit undoes the tighter step (back to B3)');
+  await p.click('.actionbar >> text=For stor'); await p.click('.actionbar >> text=For stor'); await p.click('.actionbar >> text=For stor');
+  ok(/Kan ikke pakkes tettere enn 2,0 cm/.test(await p.innerText('main')), 'tighter floor at 2 cm');
+  await reset(p);
+
   console.log('== O1004 split');
   await p.selectOption('#orderSel', 'O1004');
   var t4 = await p.innerText('main');
@@ -147,9 +161,9 @@ function ok(c, m) { if (c) { oks++; console.log('  ok   ' + m); } else { fails.p
 
   console.log('== self-test tab');
   await p.click('role=tab[name="Selvtest"]');
-  ok(/Selvtest: 22\/22 bestått/.test(await p.innerText('#stSummary')), 'on load: 22/22 (fuzz deferred)');
+  ok(/Selvtest: 23\/23 bestått/.test(await p.innerText('#stSummary')), 'on load: 23/23 (fuzz deferred)');
   await p.click('text=Kjør alle inkl. fuzz (T14)');
-  await p.waitForFunction(function () { return /23\/23/.test(document.querySelector('#stSummary').textContent); }, null, { timeout: 30000 });
+  await p.waitForFunction(function () { return /24\/24/.test(document.querySelector('#stSummary').textContent); }, null, { timeout: 30000 });
   ok(true, 'after fuzz button: ' + (await p.innerText('#stSummary')));
   ok(await p.evaluate(function () { return document.documentElement.scrollWidth <= window.innerWidth; }), 'selftest no horizontal overflow');
 

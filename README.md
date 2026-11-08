@@ -10,10 +10,10 @@ open index.html        # or double-click; works offline (file://)
 
 ## What it does
 
-- **Packer (phone, 360–390 px):** pick or scan an order, get the box, cost, chargeable weight and air %, numbered packing steps and a layer view. "Passet" confirms; "Passet ikke" adds margin so the app learns.
+- **Packer (phone, 360–390 px):** pick or scan an order, get the box, cost, chargeable weight and air %, numbered packing steps and a layer view. "Passet" confirms; "Passet ikke" adds 1 cm of room (up to +3), "For stor" packs 1 cm tighter (down to -2) and may switch to a smaller box. The app learns per item combination and explains what changed.
 - **Manager (PC):** all orders in one table, savings vs the default box B5, air before/after chart, and a "missing box" finder that proposes one new box size.
 - **Edge cases:** orders that need splitting (max 4 parcels), missing item dimensions (enter once, or try-and-press), fragile items, live order queue, JSON order import, barcode/SKU scanner field.
-- **Selvtest tab:** 23 built-in tests (T14 is a fuzz test run on demand).
+- **Selvtest tab:** 24 built-in tests (T14 is a fuzz test run on demand).
 
 ## How it decides
 
@@ -33,7 +33,7 @@ Needs Node 22+. Edit `src/` (data lives in `src/core.js`), then:
 
 ```bash
 node build.js            # inlines src/ into index.html
-node test.js             # 23 unit tests
+node test.js             # 24 unit tests
 npm i && npx playwright install chromium
 node scripts/e2e.js      # browser checks (phone, desktop, blocked storage)
 node scripts/e2e-flow.js # one-tap flow checks
