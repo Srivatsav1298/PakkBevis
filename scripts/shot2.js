@@ -1,0 +1,10 @@
+var path=require('path'),pw=require('playwright');
+(async function(){var b=await pw.chromium.launch();
+var pg=await(await b.newContext({viewport:{width:1280,height:800}})).newPage();
+await pg.goto('file://'+path.join(__dirname,'..','index.html'));await pg.waitForSelector('#orderSel');
+await pg.selectOption('#orderSel','O1002');await pg.screenshot({path:path.join(__dirname,'d-pack.png')});
+await pg.click('button.tab:has-text("Leder")');await pg.waitForTimeout(1500);await pg.screenshot({path:path.join(__dirname,'d-leader.png'),fullPage:true});
+var ph=await(await b.newContext({viewport:{width:390,height:844},deviceScaleFactor:1})).newPage();
+await ph.goto('file://'+path.join(__dirname,'..','index.html'));await ph.waitForSelector('#orderSel');
+await ph.selectOption('#orderSel','O1004');await ph.screenshot({path:path.join(__dirname,'p-split.png'),fullPage:true});
+await b.close();})();

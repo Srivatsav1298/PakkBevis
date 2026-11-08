@@ -1,0 +1,2013 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f3f5f8">
+<title>PakkBevis</title>
+<link rel="icon" href="data:,">
+<style>
+:root{--bg:#f3f5f8;--card:#fff;--ink:#111d2b;--mute:#44566a;--line:#d7dee7;--accent:#0b5cad;--accent-ink:#fff;
+--green:#0b6e4f;--green-bg:#e4f5ed;--amber:#8a5200;--amber-bg:#fff2d6;--red:#a4161a;--red-bg:#fde8e8;--focus:#ffb000;
+--gutter:clamp(12px,4vw,28px);--radius:16px;--radius-sm:10px;
+--shadow-1:0 1px 2px rgba(17,29,43,.05);--shadow-2:0 6px 18px rgba(17,29,43,.10)}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;color-scheme:light}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+h1,h2,h3{letter-spacing:-.015em}
+#app{max-width:1180px;margin:0 auto;padding:0 var(--gutter) calc(28px + env(safe-area-inset-bottom))}
+
+/* header + navigation */
+header.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 16px;padding:18px 0 12px}
+header.top h1{margin:0;font-size:clamp(1.3rem,2.4vw,1.55rem);letter-spacing:.1px}
+header.top .tag{margin:2px 0 0;color:var(--mute);font-size:.95rem}
+.langs{display:grid;grid-template-columns:repeat(2,56px);gap:6px}
+nav.tabs{position:sticky;top:0;z-index:30;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;
+padding:8px 0;margin:0 calc(-1 * var(--gutter));padding-left:var(--gutter);padding-right:var(--gutter);
+background:rgba(243,245,248,.88);background:color-mix(in srgb,var(--bg) 88%,transparent);
+-webkit-backdrop-filter:blur(12px) saturate(1.15);backdrop-filter:blur(12px) saturate(1.15);border-bottom:1px solid var(--line)}
+
+/* controls */
+button,select,input,textarea{font:inherit;color:inherit}
+button{min-height:48px;padding:10px 16px;border-radius:var(--radius-sm);border:2px solid var(--accent);background:#fff;color:var(--accent);cursor:pointer;font-weight:600}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button[aria-pressed="true"],button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button.tab{flex:1;background:#fff;border-color:var(--line);color:var(--ink)}
+button.tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+button.lang{min-width:48px;padding:8px;background:#fff;border-color:var(--line);color:var(--ink)}
+button.lang[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+button.danger{border-color:var(--red);color:var(--red)}
+button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible,summary:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+button,select,input,textarea,summary{scroll-margin-top:88px}
+label{display:block;font-weight:600;font-size:.9rem;margin-bottom:5px}
+select,input,textarea{width:100%;min-height:48px;padding:9px 11px;border:2px solid var(--line);border-radius:var(--radius-sm);background:#fff}
+textarea{min-height:120px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85rem}
+:disabled{opacity:.55;cursor:default}
+
+/* surfaces */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:clamp(14px,2vw,20px);margin:14px 0;box-shadow:var(--shadow-1)}
+.card h2,.card h3{margin:0 0 10px;font-size:clamp(1.05rem,1.7vw,1.2rem)}
+.card h3{font-size:1rem}
+.card.green{border-left:6px solid var(--green)}
+.card.amber{border-left:6px solid var(--amber);background:#fffaf0}
+.card.red{border-left:6px solid var(--red);background:#fff7f7}
+.head{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;margin-bottom:8px}
+.head h2{margin:0}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.row>*{flex:1 1 140px;min-width:0}
+.row>button{flex:0 1 auto}
+.badge{display:inline-block;padding:6px 12px;border-radius:999px;font-weight:700;border:2px solid}
+.badge.green{color:var(--green);background:var(--green-bg);border-color:var(--green)}
+.badge.amber{color:var(--amber);background:var(--amber-bg);border-color:var(--amber)}
+.badge.red{color:var(--red);background:var(--red-bg);border-color:var(--red)}
+.msg{margin:10px 0;padding:10px 12px;border-radius:var(--radius-sm);background:#eaf2fb}
+.msg.err{background:var(--red-bg);color:var(--red);font-weight:600}
+.msg.ok{background:var(--green-bg);color:var(--green);font-weight:600}
+.warn{display:block;color:var(--amber);font-weight:700}
+.small{font-size:.85rem;color:var(--mute)}
+.save{color:var(--green)}
+
+/* pack: top card */
+.topcard{padding:clamp(14px,2vw,20px)}
+.topcard .toprow{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px;align-items:end}
+.topcard .toprow>*{flex:none;min-width:0}
+.topcard .small{margin:4px 0 0}
+
+/* result card */
+.boxname{font-size:1.4rem;font-weight:800;letter-spacing:-.02em}
+.boxname.hero{font-size:clamp(2rem,5vw,2.9rem);line-height:1.05;font-weight:800;margin:4px 0 2px;overflow-wrap:anywhere}
+.boxsize{margin:0 0 10px;font-size:clamp(1rem,1.8vw,1.15rem);color:var(--mute);font-weight:600}
+.savebar{display:flex;flex-direction:column;gap:2px;margin:0 0 12px;padding:12px 14px;border-radius:var(--radius-sm);background:var(--green-bg);color:var(--green);font-weight:700}
+.savebar span{font-weight:500;font-size:.9rem}
+dl.m{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:10px 0}
+dl.m div{background:#f2f5f9;border-radius:var(--radius-sm);padding:9px 10px}
+dl.m dt{font-size:.76rem;color:var(--mute);text-transform:uppercase;letter-spacing:.03em}
+dl.m dd{margin:0;font-weight:700;font-size:1.05rem;font-variant-numeric:tabular-nums}
+dl.m.big{grid-template-columns:repeat(3,1fr);gap:8px}
+dl.m.big div{background:#eaf2fb;padding:10px 8px}
+dl.m.big dt{font-size:.72rem}
+dl.m.big dd{font-size:clamp(1.15rem,2.6vw,1.65rem);letter-spacing:-.02em}
+
+/* result: two-column body on wide screens */
+.result-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:16px 22px}
+.result-grid h3{margin-top:0}
+.result-side{min-width:0}
+@media (min-width:920px){
+.result-grid{grid-template-columns:minmax(0,1.15fr) minmax(300px,.85fr);align-items:start}
+.result-side{border-left:1px solid var(--line);padding-left:22px}
+}
+
+/* steps */
+ul.clean{list-style:none;margin:0;padding:0}
+ul.clean li{padding:8px 0;border-bottom:1px solid var(--line)}
+ul.clean li:last-child{border-bottom:0}
+ol.steps{list-style:none;margin:0;padding:0}
+.steps li{padding:0;border-bottom:1px solid var(--line)}
+.steps li:last-child{border-bottom:0}
+label.step,span.step{display:flex;align-items:center;gap:12px;min-height:56px;padding:6px 4px;margin:0;font-weight:500;font-size:1.02rem;cursor:pointer;border-radius:var(--radius-sm)}
+label.step input{flex:0 0 28px;width:28px;min-height:28px;height:28px;margin:0;accent-color:var(--green)}
+label.step .warn{font-size:.95rem}
+label.step.done{color:var(--mute);text-decoration:line-through}
+span.step.fill{font-weight:700;cursor:default}
+
+/* proof, viz, extras */
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none}
+.chips li{background:#eef1f5;border-radius:999px;padding:5px 11px;font-size:.88rem}
+.chips.proof li{background:#f4f7fb;border:1px solid var(--line);font-weight:600}
+.layers{display:flex;flex-wrap:wrap;gap:6px}
+.layers button{min-width:48px;padding:8px 12px}
+.viz{width:100%;max-width:100%;height:auto;display:block;margin:10px 0;background:#fff;border:1px solid var(--line);border-radius:var(--radius-sm)}
+.chart{width:100%;max-width:420px;height:auto;display:block}
+.legend{font-size:.85rem;color:var(--mute)}
+details.more{margin-top:12px}
+details.more>summary,details.card>summary{cursor:pointer;min-height:48px;display:flex;align-items:center;font-weight:700}
+details.card>summary{padding:2px 0}
+.tag-test{font-size:.75rem;background:var(--amber-bg);color:var(--amber);border-radius:6px;padding:2px 7px;margin-left:8px}
+
+/* action bar */
+.actionbar{position:sticky;bottom:0;z-index:20;background:var(--card);border:1px solid var(--line);border-top:3px solid var(--accent);
+border-radius:var(--radius);padding:10px;margin:16px 0;box-shadow:0 -6px 20px rgba(17,29,43,.12);bottom:calc(0px + env(safe-area-inset-bottom))}
+.actionbar .row{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:stretch}
+.actionbar .row>button{width:100%;flex:none}
+.actionbar .msg{margin:8px 0 0}
+@media (min-width:700px){.actionbar .row{grid-template-columns:minmax(0,320px) minmax(0,320px);justify-content:center}}
+
+/* queue + import */
+.queue button.qi{display:block;width:100%;text-align:left;margin:6px 0;font-weight:500}
+.queue button.qi.fresh{border-color:var(--green);background:var(--green-bg)}
+
+/* manager */
+.tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+table{border-collapse:collapse;width:100%;font-size:.9rem;font-variant-numeric:tabular-nums}
+th,td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}
+thead th{font-size:.78rem;color:var(--mute);text-transform:uppercase;letter-spacing:.03em;font-weight:700}
+tfoot td{font-weight:800;border-top:2px solid var(--ink)}
+.mgr-table thead th:first-child,.mgr-table tbody td:first-child,.mgr-table tfoot td:first-child{position:sticky;left:0;z-index:2;background:var(--card);box-shadow:1px 0 0 var(--line)}
+.mgr-head .boxname{font-size:clamp(1.05rem,2vw,1.3rem)}
+@media (min-width:1000px){
+main.view-leader{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,400px);gap:0 18px;align-items:start}
+main.view-leader>.card{grid-column:1 / -1}
+main.view-leader>.mgr-chart{grid-column:1}
+main.view-leader>.mgr-finder{grid-column:2}
+.mgr-chart .chart{max-width:100%}
+}
+
+/* self-test + footer */
+.st-ok{color:var(--green);font-weight:700}
+.st-fail{color:var(--red);font-weight:700}
+footer{margin-top:24px;text-align:center;color:var(--mute);font-size:.9rem}
+::selection{background:#cfe3f8}
+
+/* quiet micro-interactions: step on hover, press on click */
+button,.card,.queue button.qi,.chips li{transition:transform .12s ease,background-color .12s ease,box-shadow .12s ease,border-color .12s ease}
+button:active{transform:translateY(1px) scale(.99)}
+@media (hover:hover){
+button:hover{transform:translateY(-1px)}
+button.primary:hover{background:#094a8c}
+button.danger:hover{background:var(--red-bg)}
+button.tab:hover:not([aria-selected="true"]),button.lang:hover:not([aria-pressed="true"]){background:#eef3f9}
+.queue button.qi:hover{transform:translateY(-2px);box-shadow:var(--shadow-2)}
+label.step:hover{background:#f5f8fb}
+.viz:hover{box-shadow:var(--shadow-2)}
+}
+button:disabled{transform:none}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}button:hover,button:active,.queue button.qi:hover{transform:none}}
+
+/* narrow screens */
+@media (max-width:639px){
+.topcard .toprow{grid-template-columns:1fr;gap:10px}
+}
+@media (max-width:520px){
+header.top{padding-top:14px}
+.card{margin:12px 0}
+dl.m.big{grid-template-columns:repeat(3,1fr)}
+.boxname.hero{font-size:clamp(1.8rem,9vw,2.3rem)}
+.actionbar .row{grid-template-columns:1fr 1fr}
+}
+@media (max-width:380px){
+#app{padding-left:10px;padding-right:10px}
+nav.tabs{padding-left:10px;padding-right:10px;margin-left:-10px;margin-right:-10px}
+button{padding-left:10px;padding-right:10px}
+.actionbar .row{grid-template-columns:1fr}
+.boxname.hero{font-size:1.75rem}
+dl.m.big dd{font-size:1.1rem}
+}
+
+/* packer confirmation line + compact header */
+.packer{margin:0 0 8px;font-weight:600;font-size:.95rem}
+.packer.wait{color:var(--amber)}
+.packer.done{color:var(--green)}
+header.top{flex-wrap:nowrap;padding:8px 0 6px}
+header.top h1{font-size:1.2rem;line-height:1.1}
+header.top .tag{font-size:.8rem}
+.langs{gap:4px}
+button.lang{min-width:48px;min-height:48px;padding:4px}
+
+.langs{margin-left:auto}
+@media (max-width:420px){.topcard .small{display:none}.topcard{padding:8px 10px}.topcard label{margin-bottom:2px}}
+
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* I18N dictionary. Each key: [NO, EN]. Templates use {name} placeholders.
+ */
+(function (root) {
+  'use strict';
+  var K = {
+    'app.tagline': ['Riktig eske. Bevist.', 'Right box. Proven.'],
+    'app.sub': ['Pakk etter bevis', 'Pack by proof'],
+    'footer.testdata': ['Kun testdata – ingen ekte kundedata', 'Test data only – no real customer data'],
+    'tab.pack': ['Pakking', 'Packing'],
+    'tab.leader': ['Leder', 'Manager'],
+    'tab.selftest': ['Selvtest', 'Self-test'],
+    'lang.label': ['Språk', 'Language'],
+
+    'order.label': ['Ordre', 'Order'],
+    'order.custom': ['Eget valg', 'Custom order'],
+    'order.O1001': ['Enkel', 'Simple'],
+    'order.O1002': ['Tett pakking', 'Tight packing'],
+    'order.O1003': ['Skjør blanding', 'Fragile mix'],
+    'order.O1004': ['Delt forsendelse', 'Split shipment'],
+    'order.O1005': ['Default for stor', 'Default too big'],
+    'order.O1006': ['Ukjent mål', 'Unknown size'],
+    'order.queued': ['Fra køen', 'From queue'],
+    'order.lines': ['Ordrelinjer', 'Order lines'],
+    'order.units': ['{n} enheter', '{n} units'],
+    'order.empty': ['Ingen varer i ordren', 'No items in the order'],
+    'item.fragile': ['Skjør', 'Fragile'],
+    'item.unknown': ['Mål mangler', 'Size missing'],
+
+    'state.GREEN_VERIFIED': ['Maskinkontrollert ✓', 'Computer-verified ✓'],
+    'state.AMBER_MISSING_DIMS': ['Mål mangler', 'Dimensions missing'],
+    'state.AMBER_PROVISIONAL': ['Foreløpig – mål mangler', 'Provisional – dimensions missing'],
+    'state.NEEDS_SPLIT': ['Må deles', 'Must be split'],
+    'state.RED_CANNOT_PACK': ['Kan ikke pakkes', 'Cannot pack'],
+    'state.NONE': ['Ingen anbefaling', 'No recommendation'],
+
+    'result.title': ['Resultat', 'Result'],
+    'result.box': ['Eske', 'Box'],
+    'result.size': ['Innvendig mål', 'Inner size'],
+    'result.air': ['Luft', 'Air'],
+    'result.filler': ['Fyll', 'Filler'],
+    'result.chargeable': ['Fraktbar vekt', 'Chargeable weight'],
+    'result.freight': ['Frakt', 'Freight'],
+    'result.total': ['Totalkostnad', 'Total cost'],
+    'result.savings': ['Spart mot standard (B5)', 'Saved vs default (B5)'],
+    'result.noBaseline': ['Standardesken B5 kan ikke brukes her', 'Default box B5 cannot be used here'],
+    'result.airBeforeAfter': ['Luft før (B5) → etter', 'Air before (B5) → after'],
+    'result.parcels': ['{n} pakker', '{n} parcels'],
+    'result.margin': ['Ekstra margin: {n} cm', 'Extra margin: {n} cm'],
+    'result.estimated': ['Mål er estimert', 'Dimensions are estimated'],
+
+    'viz.title': ['Visualisering', 'Visualisation'],
+    'viz.layer': ['Lag {n}', 'Layer {n}'],
+    'viz.top': ['Sett ovenfra', 'Top-down view'],
+    'viz.iso': ['Isometrisk (alle varer)', 'Isometric (all items)'],
+    'viz.legendFragile': ['Stiplet = skjør', 'Dashed = fragile'],
+    'viz.legendEmpty': ['Skravert = tomrom', 'Hatched = empty space'],
+    'viz.aria': ['Tegning av pakking i esken', 'Drawing of the packing in the box'],
+
+    'steps.title': ['Pakkesteg', 'Pack steps'],
+    'steps.item': ['Steg {n}: Legg {item} ({dims}) {pos}', 'Step {n}: Place {item} ({dims}) {pos}'],
+    'steps.pos': ['ved x {x}, y {y}, nivå {z}', 'at x {x}, y {y}, level {z}'],
+    'steps.tick': ['Ferdig – steg', 'Done – step'],
+    'steps.rotated': ['rotert', 'rotated'],
+    'steps.fragile': ['Skjør – ikke legg noe tungt oppå', 'Fragile – do not put anything heavy on top'],
+    'steps.filler': ['Fyll {l} L tomrom med papir', 'Fill {l} L of empty space with paper'],
+
+    'why.title': ['Hvorfor denne esken?', 'Why this box?'],
+    'why.text': ['{box} ({size} cm) har lavest totalkostnad: {total} NOK mot {base} NOK for standardesken B5. Luft {airBefore}% → {airAfter}%.',
+      '{box} ({size} cm) has the lowest total cost: {total} NOK versus {base} NOK for the default box B5. Air {airBefore}% → {airAfter}%.',
+      '{box} ({size} cm) ma najniższy koszt: {total} NOK wobec {base} NOK dla domyślnego B5. Powietrze {airBefore}% → {airAfter}%.',
+      '{box} ({size} см) має найнижчу вартість: {total} NOK проти {base} NOK для типової B5. Повітря {airBefore}% → {airAfter}%.'],
+    'why.textNoBase': ['{box} ({size} cm) har lavest totalkostnad: {total} NOK. Luft {airAfter}%.',
+      '{box} ({size} cm) has the lowest total cost: {total} NOK. Air {airAfter}%.',
+      '{box} ({size} cm) ma najniższy koszt: {total} NOK. Powietrze {airAfter}%.',
+      '{box} ({size} см) має найнижчу вартість: {total} NOK. Повітря {airAfter}%.'],
+    'why.smallest': ['Den minste esken {box} er dyrere: frakt {f1} NOK mot {f2} NOK.', 'The smallest box {box} costs more: freight {f1} NOK versus {f2} NOK.'],
+    'why.verified': ['Pakkingen er sjekket av en uavhengig kontroll.', 'The packing was checked by an independent verifier.'],
+    'why.rejected': ['Forkastede alternativer', 'Rejected alternatives'],
+    'reason.does_not_fit': ['passer ikke', 'does not fit'],
+    'reason.too_heavy': ['for tung', 'too heavy'],
+    'reason.more_expensive': ['dyrere', 'more expensive'],
+    'reason.unsupported_weight': ['over 25 kg', 'over 25 kg'],
+    'reason.verify_failed': ['feilet kontroll', 'failed verification'],
+    'reason.item_too_large': ['vare for stor', 'item too large'],
+
+    'btn.fit': ['Passet', 'It fit'],
+    'btn.nofit': ['Passet ikke', 'Did not fit'],
+    'learn.applied': ['Lært: denne kombinasjonen får {n} cm ekstra margin.', 'Learned: this combination gets {n} cm extra margin.'],
+    'packer.wait': ['Foreslått – prøv eska og bekreft under', 'Suggested – try the box, then confirm below'],
+    'packer.done': ['✓ Bekreftet av pakker', '✓ Confirmed by packer'],
+    'learn.confirmed': ['Bekreftet – takk!', 'Confirmed – thanks!'],
+    'learn.reset': ['Nullstill læring', 'Reset learning'],
+    'learn.resetDone': ['Læring og innlagte mål er nullstilt.', 'Learning and entered dimensions were reset.'],
+
+    'dims.missing': ['Mål mangler for: {item}', 'Dimensions missing for: {item}'],
+    'dims.enter': ['1. Skriv inn mål', '1. Enter dimensions'],
+    'dims.L': ['Lengde (cm)', 'Length (cm)'],
+    'dims.W': ['Bredde (cm)', 'Width (cm)'],
+    'dims.H': ['Høyde (cm)', 'Height (cm)'],
+    'dims.save': ['Lagre mål', 'Save dimensions'],
+    'dims.invalid': ['Mål må være tall større enn 0 og mindre enn 200.', 'Dimensions must be numbers greater than 0 and less than 200.'],
+    'dims.tnp': ['2. Prøv-og-trykk', '2. Try-and-press'],
+    'dims.tnpStart': ['Start prøv-og-trykk (30×20×5 cm)', 'Start try-and-press (30×20×5 cm)'],
+    'dims.tnpTry': ['Forsøk {n} av 3: foreløpig mål {dims} cm. Passet varen i esken?', 'Try {n} of 3: provisional size {dims} cm. Did the item fit in the box?'],
+    'dims.tnpManual': ['Prøv-og-trykk lyktes ikke – skriv inn mål manuelt.', 'Try-and-press did not succeed – enter the dimensions manually.'],
+    'dims.provisional': ['Foreløpig – mål mangler', 'Provisional – dimensions missing'],
+    'dims.estimated': ['estimert', 'estimated'],
+    'dims.cancel': ['Avbryt', 'Cancel'],
+
+    'split.title': ['Delt forsendelse', 'Split shipment'],
+    'split.summary': ['{n} pakker – totalt {t} NOK', '{n} parcels – total {t} NOK'],
+    'split.parcel': ['Pakke {n}', 'Parcel {n}'],
+    'split.cannot': ['Kan ikke pakkes automatisk – ta kontakt med lagerleder', 'Cannot be packed automatically – contact the warehouse manager'],
+
+    'proof.title': ['Bevis: uavhengig kontroll', 'Proof: independent check'],
+    'proof.bounds': ['Alt ligger innenfor esken', 'Everything is inside the box'],
+    'proof.overlap': ['Ingen varer overlapper', 'No items overlap'],
+    'proof.items': ['Riktige varer og antall', 'Correct items and quantities'],
+    'proof.orientation': ['Riktig størrelse på hver vare', 'Correct size for every item'],
+    'proof.weight': ['Innenfor eskens maksvekt', 'Within the box weight limit'],
+    'proof.fragile': ['Ingenting ligger oppå skjøre varer', 'Nothing rests on fragile items'],
+    'mgr.headline': ['{nok} NOK og {l} liter luft spart på {n} ordrer mot standardesken B5', '{nok} NOK and {l} litres of air saved on {n} orders versus the default box B5'],
+    'mgr.title': ['Lederoversikt', 'Manager overview'],
+    'col.order': ['Ordre', 'Order'],
+    'col.box': ['Eske', 'Box'],
+    'col.air': ['Luft %', 'Air %'],
+    'col.kg': ['Fraktbar kg', 'Chargeable kg'],
+    'col.freight': ['Frakt NOK', 'Freight NOK'],
+    'col.total': ['Total NOK', 'Total NOK'],
+    'col.savings': ['Spart NOK', 'Saved NOK'],
+    'col.status': ['Status', 'Status'],
+    'mgr.totals': ['Totalt', 'Totals'],
+    'mgr.chart': ['Luft % før (B5) og etter', 'Air % before (B5) and after'],
+    'chart.before': ['Før (B5)', 'Before (B5)'],
+    'chart.after': ['Etter', 'After'],
+    'mgr.finder': ['Manglende eske', 'Missing box'],
+    'mgr.finderHelp': ['Finner eskestørrelsen som sparer mest på tvers av ordrene.', 'Finds the box size that saves the most across the orders.'],
+    'mgr.run': ['Finn ny eske', 'Find new box'],
+    'mgr.calc': ['Beregner…', 'Calculating…'],
+    'mgr.suggest': ['Foreslått ny eske: {dims} – sparer {nok} NOK og {l} liter luft på {n} ordre', 'Suggested new box: {dims} – saves {nok} NOK and {l} litres of air on {n} orders'],
+    'mgr.none': ['Ingen ny eske lønner seg', 'No new box pays off'],
+    'mgr.skipped': ['Ordre med manglende mål er utelatt', 'Orders with missing dimensions are left out'],
+
+    'q.title': ['Live-kø', 'Live queue'],
+    'q.note': ['Simulert kø (testdata). Samme funksjoner kan kobles til Holio-API.', 'Simulated queue (test data). The same functions can be connected to the Holio API.'],
+    'q.new': ['Ny ordre', 'New order'],
+    'q.autoOff': ['Auto-ankomst: av', 'Auto-arrival: off'],
+    'q.autoOn': ['Auto-ankomst: på', 'Auto-arrival: on'],
+    'q.import': ['Importer ordre (JSON)', 'Import order (JSON)'],
+    'q.json': ['Ordre-JSON', 'Order JSON'],
+    'q.add': ['Valider og legg til', 'Validate and add'],
+    'q.empty': ['Ingen ordrer i køen ennå', 'No orders in the queue yet'],
+    'q.item': ['{id} · {t} · {n} enheter', '{id} · {t} · {n} units'],
+    'q.added': ['Ordre {id} lagt til i køen', 'Order {id} added to the queue'],
+    'q.count': ['{n} av 20 i køen', '{n} of 20 in queue'],
+    'err.not_json': ['Ugyldig JSON.', 'Invalid JSON.'],
+    'err.not_object': ['Ordren må være et JSON-objekt.', 'The order must be a JSON object.'],
+    'err.bad_order_id': ['orderId mangler eller er ugyldig.', 'orderId is missing or invalid.'],
+    'err.no_lines': ['«lines» må være en liste med minst én linje.', '"lines" must be a list with at least one line.'],
+    'err.line_not_object': ['Linje {d} er ikke et objekt.', 'Line {d} is not an object.'],
+    'err.bad_qty': ['Linje {d}: antall må være et heltall fra 1 til 20.', 'Line {d}: qty must be an integer from 1 to 20.'],
+    'err.unknown_item': ['Ukjent SKU/EAN: {d}', 'Unknown SKU/EAN: {d}'],
+    'err.missing_code': ['Linje {d}: SKU eller EAN mangler.', 'Line {d}: SKU or EAN is missing.'],
+    'err.too_many_units': ['For mange enheter ({d}). Maks 30.', 'Too many units ({d}). Max 30.'],
+
+    'scan.label': ['Skann vare', 'Scan item'],
+    'scan.hint': ['Skann eller skriv SKU/EAN og trykk Enter', 'Scan or type SKU/EAN and press Enter'],
+    'scan.ok': ['Lagt til: {item}', 'Added: {item}'],
+    'scan.unknown': ['Ukjent kode: {code}', 'Unknown code: {code}'],
+    'scan.full': ['Maks 30 enheter i ordren', 'Max 30 units in the order'],
+
+    'custom.pick': ['Velg vare', 'Choose item'],
+    'custom.qty': ['Antall (1–20)', 'Quantity (1–20)'],
+    'custom.add': ['Legg til', 'Add'],
+    'custom.remove': ['Fjern', 'Remove'],
+    'custom.clear': ['Tøm ordren', 'Clear order'],
+    'custom.max': ['Maks 30 enheter totalt.', 'Max 30 units in total.'],
+
+    'as.title': ['Antakelser', 'Assumptions'],
+    'as.badge': ['testverdier', 'test values'],
+    'as.fragile': ['Skjør vare opptar mål + 1,0 cm på hver akse.', 'A fragile item occupies its dimensions + 1.0 cm on every axis.'],
+    'as.filler': ['Fyll: 0,12 NOK per liter tomrom (indre volum minus varevolum).', 'Filler: 0.12 NOK per litre of empty space (inner volume minus item volume).'],
+    'as.outer': ['Ytre mål = indre + 1 cm per akse. Volumvekt = ytre volum (cm³) / 5000.', 'Outer size = inner + 1 cm per axis. Volumetric kg = outer volume (cm³) / 5000.'],
+    'as.charge': ['Fraktbar vekt = maks(faktisk kg inkl. eske, volumvekt).', 'Chargeable kg = max(actual kg incl. box, volumetric kg).'],
+    'as.freight': ['Frakt: ≤1 kg 49, ≤2 kg 59, ≤5 kg 79, ≤10 kg 119, ≤15 kg 159, ≤25 kg 219 NOK. Over 25 kg støttes ikke.', 'Freight: ≤1 kg 49, ≤2 kg 59, ≤5 kg 79, ≤10 kg 119, ≤15 kg 159, ≤25 kg 219 NOK. Above 25 kg is unsupported.'],
+    'as.total': ['Total = eskepris + fyll + frakt.', 'Total = box cost + filler + freight.'],
+    'as.base': ['Standardeske «etter øyet»: B5.', 'Default "by eye" box: B5.'],
+    'as.units': ['Enheter: cm, kg, NOK. Alle data er syntetiske.', 'Units: cm, kg, NOK. All data is synthetic.'],
+
+    'st.title': ['Selvtest', 'Self-test'],
+    'st.summary': ['Selvtest: {p}/{t} bestått', 'Self-test: {p}/{t} passed'],
+    'st.run': ['Kjør selvtest', 'Run self-test'],
+    'st.runFuzz': ['Kjør alle inkl. fuzz (T14)', 'Run all incl. fuzz (T14)'],
+    'st.running': ['Kjører…', 'Running…'],
+    'st.pass': ['OK', 'OK'],
+    'st.fail': ['FEIL', 'FAIL'],
+    'st.fuzzPending': ['T14 (fuzz) kjøres kun med knappen under.', 'T14 (fuzz) only runs with the button below.'],
+
+    'unit.cm': ['cm', 'cm'],
+    'unit.kg': ['kg', 'kg'],
+    'unit.l': ['L', 'L']
+  };
+  var I18N = { NO: {}, EN: {} };
+  var LANGS = ['NO', 'EN'];
+  Object.keys(K).forEach(function (k) {
+    LANGS.forEach(function (l, i) { I18N[l][k] = K[k][i]; });
+  });
+  if (typeof module !== 'undefined' && module.exports) module.exports = I18N; else root.I18N = I18N;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* PakkBevis core: pure functions only, NO DOM access.
+ * Sections: DATA, ENGINE, VERIFIER, COST, RECOMMEND, SPLIT, LEARNING, IMPORT, QUEUE
+ */
+(function (root) {
+  'use strict';
+  var PB = {};
+  var EPS = 1e-9;
+
+  // ===================================================================== DATA
+  PB.ASSUMPTIONS = {
+    fragilePad: 1.0,      // cm added on every axis of a fragile item
+    fillerRate: 0.12,     // NOK per litre of empty space
+    outerAdd: 1.0,        // cm added to inner dims per axis -> outer dims
+    volDivisor: 5000,     // volumetric kg = outer cm3 / 5000
+    maxKg: 25,            // above this: unsupported
+    brackets: [[1, 49], [2, 59], [5, 79], [10, 119], [15, 159], [25, 219]],
+    maxUnitsPerOrder: 30,
+    maxQtyPerLine: 20,
+    maxParcels: 4,
+    baselineBox: 'B5'
+  };
+
+  PB.ITEMS = [
+    { id: 'SKU01', no: 'T-skjorte brettet', en: 'Folded T-shirt', L: 28, W: 22, H: 3, kg: 0.20, fragile: false, ean: '7000000000011', dimsKnown: true },
+    { id: 'SKU02', no: 'Genser', en: 'Sweater', L: 32, W: 26, H: 6, kg: 0.45, fragile: false, ean: '7000000000028', dimsKnown: true },
+    { id: 'SKU03', no: 'Joggesko (eske)', en: 'Running shoes (box)', L: 33, W: 22, H: 12, kg: 0.90, fragile: false, ean: '7000000000035', dimsKnown: true },
+    { id: 'SKU04', no: 'Vannflaske', en: 'Water bottle', L: 26, W: 8, H: 8, kg: 0.35, fragile: false, ean: '7000000000042', dimsKnown: true },
+    { id: 'SKU05', no: 'Krus (keramikk)', en: 'Ceramic mug', L: 12, W: 12, H: 11, kg: 0.40, fragile: true, ean: '7000000000059', dimsKnown: true },
+    { id: 'SKU06', no: 'Bok', en: 'Book', L: 24, W: 17, H: 3, kg: 0.50, fragile: false, ean: '7000000000066', dimsKnown: true },
+    { id: 'SKU07', no: 'Lysestake glass', en: 'Glass candlestick', L: 10, W: 10, H: 20, kg: 0.60, fragile: true, ean: '7000000000073', dimsKnown: true },
+    { id: 'SKU08', no: 'Hodetelefoner', en: 'Headphones', L: 20, W: 18, H: 8, kg: 0.30, fragile: true, ean: '7000000000080', dimsKnown: true },
+    { id: 'SKU09', no: 'Ladekabel', en: 'Charging cable', L: 15, W: 10, H: 3, kg: 0.08, fragile: false, ean: '7000000000097', dimsKnown: true },
+    { id: 'SKU10', no: 'Kaffepose', en: 'Coffee bag', L: 18, W: 10, H: 6, kg: 0.25, fragile: false, ean: '7000000000103', dimsKnown: true },
+    { id: 'SKU11', no: 'Yogamatte rullet', en: 'Rolled yoga mat', L: 62, W: 12, H: 12, kg: 1.20, fragile: false, ean: '7000000000110', dimsKnown: true },
+    { id: 'SKU12', no: 'Notatbok-sett', en: 'Notebook set', L: 21, W: 15, H: 5, kg: 0.45, fragile: false, ean: '7000000000127', dimsKnown: true },
+    { id: 'SKU13', no: 'Hudkrem', en: 'Skin cream', L: 6, W: 6, H: 14, kg: 0.20, fragile: false, ean: '7000000000134', dimsKnown: true },
+    { id: 'SKU14', no: 'Smarthøyttaler', en: 'Smart speaker', L: 22, W: 12, H: 12, kg: 0.95, fragile: true, ean: '7000000000141', dimsKnown: true },
+    { id: 'SKU15', no: 'Skjerf (ukjent mål)', en: 'Scarf (unknown size)', L: null, W: null, H: null, kg: 0.18, fragile: false, ean: '7000000000158', dimsKnown: false }
+  ];
+
+  PB.BOXES = [
+    { id: 'B1', name: 'Liten', L: 20, W: 15, H: 10, own: 0.08, maxLoad: 2, cost: 6 },
+    { id: 'B2', name: 'Flat', L: 35, W: 25, H: 8, own: 0.12, maxLoad: 3, cost: 8 },
+    { id: 'B3', name: 'Medium', L: 30, W: 22, H: 15, own: 0.15, maxLoad: 5, cost: 10 },
+    { id: 'B4', name: 'Stor', L: 40, W: 30, H: 20, own: 0.25, maxLoad: 10, cost: 14 },
+    { id: 'B5', name: 'Ekstra stor', L: 55, W: 40, H: 30, own: 0.45, maxLoad: 15, cost: 22 },
+    { id: 'B6', name: 'Lang', L: 70, W: 20, H: 20, own: 0.30, maxLoad: 8, cost: 16 }
+  ];
+
+  // O1004 quantities were adjusted? see README/report; engine decides actual parcel count.
+  PB.ORDERS = [
+    { id: 'O1001', lines: [{ sku: 'SKU01', qty: 2 }, { sku: 'SKU09', qty: 1 }] },
+    { id: 'O1002', lines: [{ sku: 'SKU03', qty: 1 }, { sku: 'SKU04', qty: 1 }, { sku: 'SKU06', qty: 1 }] },
+    { id: 'O1003', lines: [{ sku: 'SKU05', qty: 2 }, { sku: 'SKU07', qty: 1 }, { sku: 'SKU08', qty: 1 }, { sku: 'SKU02', qty: 1 }] },
+    { id: 'O1004', lines: [{ sku: 'SKU11', qty: 2 }, { sku: 'SKU03', qty: 3 }, { sku: 'SKU14', qty: 2 }, { sku: 'SKU12', qty: 4 }] },
+    { id: 'O1005', lines: [{ sku: 'SKU13', qty: 1 }, { sku: 'SKU10', qty: 1 }] },
+    { id: 'O1006', lines: [{ sku: 'SKU15', qty: 1 }, { sku: 'SKU01', qty: 1 }] }
+  ];
+
+  PB.getOrder = function (id) {
+    for (var i = 0; i < PB.ORDERS.length; i++) if (PB.ORDERS[i].id === id) return PB.ORDERS[i];
+    return null;
+  };
+
+  /* Resolve an item. opts.dims[id] = {L,W,H,estimated,provisional} overrides/confirms dims.
+   * opts.extraItems[id] = full item object (used by tests). */
+  PB.getItem = function (id, opts) {
+    var base = null, i;
+    if (opts && opts.extraItems && opts.extraItems[id]) base = opts.extraItems[id];
+    else for (i = 0; i < PB.ITEMS.length; i++) if (PB.ITEMS[i].id === id) { base = PB.ITEMS[i]; break; }
+    if (!base) return null;
+    var item = { id: base.id, no: base.no, en: base.en, L: base.L, W: base.W, H: base.H, kg: base.kg,
+      fragile: !!base.fragile, ean: base.ean, dimsKnown: !!base.dimsKnown, provisional: false, estimated: false };
+    var ov = opts && opts.dims && opts.dims[id];
+    if (ov && ov.L > 0 && ov.W > 0 && ov.H > 0) {
+      item.L = ov.L; item.W = ov.W; item.H = ov.H; item.dimsKnown = true;
+      item.provisional = !!ov.provisional; item.estimated = !!ov.estimated;
+    }
+    return item;
+  };
+
+  PB.findItemByCode = function (code) {
+    var c = String(code == null ? '' : code).trim().toUpperCase();
+    if (!c) return null;
+    for (var i = 0; i < PB.ITEMS.length; i++) {
+      if (PB.ITEMS[i].id.toUpperCase() === c || PB.ITEMS[i].ean === c) return PB.ITEMS[i];
+    }
+    return null;
+  };
+
+  PB.mulberry32 = function (a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  };
+
+  // merge duplicate lines, drop non-positive qty; keeps first-seen order
+  function normLines(lines) {
+    var out = [], idx = {};
+    (lines || []).forEach(function (l) {
+      if (!l || !(l.qty > 0)) return;
+      if (idx[l.sku] === undefined) { idx[l.sku] = out.length; out.push({ sku: l.sku, qty: l.qty }); }
+      else out[idx[l.sku]].qty += l.qty;
+    });
+    return out;
+  }
+  PB.normLines = normLines;
+
+  // ================================================================== ENGINE
+  function buildUnits(lines, opts) {
+    var units = [], counters = {}, margin = (opts && opts.margin) > 0 ? opts.margin : 0;
+    normLines(lines).forEach(function (l) {
+      var item = PB.getItem(l.sku, opts);
+      if (!item) throw new Error('unknown item ' + l.sku);
+      for (var q = 0; q < l.qty; q++) {
+        counters[l.sku] = (counters[l.sku] || 0);
+        var d = [item.L + margin, item.W + margin, item.H + margin];
+        if (item.fragile) d = d.map(function (v) { return v + PB.ASSUMPTIONS.fragilePad; });
+        units.push({ itemId: l.sku, index: counters[l.sku]++, dims: d, weight: item.kg, fragile: item.fragile,
+          vol: d[0] * d[1] * d[2], rawVol: item.L * item.W * item.H });
+      }
+    });
+    return units;
+  }
+
+  function rotations(d) {
+    var p = [[d[0], d[1], d[2]], [d[0], d[2], d[1]], [d[1], d[0], d[2]], [d[1], d[2], d[0]], [d[2], d[0], d[1]], [d[2], d[1], d[0]]];
+    var seen = {}, out = [];
+    p.forEach(function (r) { var k = r.join(','); if (!seen[k]) { seen[k] = 1; out.push(r); } });
+    return out;
+  }
+
+  function fitsEmpty(box, dims) {
+    return rotations(dims).some(function (r) { return r[0] <= box.L + EPS && r[1] <= box.W + EPS && r[2] <= box.H + EPS; });
+  }
+
+  function overlapDepth(a1, a2, b1, b2) { return Math.min(a2, b2) - Math.max(a1, b1); }
+
+  function validAt(box, placed, x, y, z, r, fragile) {
+    if (x + r[0] > box.L + EPS || y + r[1] > box.W + EPS || z + r[2] > box.H + EPS) return false;
+    for (var i = 0; i < placed.length; i++) {
+      var p = placed[i];
+      var ox = overlapDepth(x, x + r[0], p.x, p.x + p.w);
+      var oy = overlapDepth(y, y + r[1], p.y, p.y + p.d);
+      if (ox <= EPS || oy <= EPS) continue;       // no footprint overlap -> no vertical or any overlap
+      var oz = overlapDepth(z, z + r[2], p.z, p.z + p.h);
+      if (oz > EPS) return false;                 // volumes intersect
+      // fragile rule, both directions, footprints overlap here
+      if (!fragile && p.fragile && z >= p.z + p.h - EPS) return false;   // non-fragile on/above fragile
+      if (fragile && !p.fragile && p.z >= z + r[2] - EPS) return false;  // fragile placed under non-fragile
+    }
+    return true;
+  }
+
+  function tryStrategy(box, order) {
+    var placed = [], cands = [[0, 0, 0]];
+    for (var u = 0; u < order.length; u++) {
+      var unit = order[u], rots = rotations(unit.dims), done = false;
+      cands.sort(function (a, b) { return (a[2] - b[2]) || (a[1] - b[1]) || (a[0] - b[0]); });
+      for (var c = 0; c < cands.length && !done; c++) {
+        var cd = cands[c];
+        for (var r = 0; r < rots.length; r++) {
+          var rot = rots[r];
+          if (validAt(box, placed, cd[0], cd[1], cd[2], rot, unit.fragile)) {
+            var pl = { itemId: unit.itemId, index: unit.index, x: cd[0], y: cd[1], z: cd[2], w: rot[0], d: rot[1], h: rot[2],
+              fragile: unit.fragile, weight: unit.weight,
+              rotated: !(rot[0] === unit.dims[0] && rot[1] === unit.dims[1] && rot[2] === unit.dims[2]) };
+            placed.push(pl);
+            cands.splice(c, 1);
+            var add = [[pl.x + pl.w, pl.y, pl.z], [pl.x, pl.y + pl.d, pl.z], [pl.x, pl.y, pl.z + pl.h]];
+            add.forEach(function (n) {
+              if (n[0] >= box.L - EPS || n[1] >= box.W - EPS || n[2] >= box.H - EPS) return;
+              for (var k = 0; k < cands.length; k++) if (cands[k][0] === n[0] && cands[k][1] === n[1] && cands[k][2] === n[2]) return;
+              cands.push(n);
+            });
+            done = true; break;
+          }
+        }
+      }
+      if (!done) return null;
+    }
+    return placed;
+  }
+
+  var STRATEGIES = [
+    { name: 'volume', key: function (u) { return u.vol; } },
+    { name: 'longest', key: function (u) { return Math.max(u.dims[0], u.dims[1], u.dims[2]); } },
+    { name: 'weight', key: function (u) { return u.weight; } }
+  ];
+
+  PB.packInBox = function (box, orderLines, opts) {
+    opts = opts || {};
+    var units = buildUnits(orderLines, opts), i;
+    for (i = 0; i < units.length; i++) {
+      if (!fitsEmpty(box, units[i].dims)) return { ok: false, reason: 'item_too_large', placements: [], strategy: null };
+    }
+    var w = 0; units.forEach(function (u) { w += u.weight; });
+    if (w > box.maxLoad + EPS) return { ok: false, reason: 'too_heavy', placements: [], strategy: null };
+    var vol = 0; units.forEach(function (u) { vol += u.vol; });
+    if (vol > box.L * box.W * box.H + EPS) return { ok: false, reason: 'does_not_fit', placements: [], strategy: null };
+    for (var s = 0; s < STRATEGIES.length; s++) {
+      var st = STRATEGIES[s];
+      var order = units.slice().sort(function (a, b) {
+        var d = st.key(b) - st.key(a);
+        if (d !== 0) return d;
+        if (a.itemId !== b.itemId) return a.itemId < b.itemId ? -1 : 1;
+        return a.index - b.index;
+      });
+      var res = tryStrategy(box, order);
+      if (res) return { ok: true, reason: null, placements: res, strategy: st.name };
+    }
+    // Extended deterministic search (only reached when the three base strategies fail).
+    function cmpId(a, b) { return a.itemId < b.itemId ? -1 : a.itemId > b.itemId ? 1 : a.index - b.index; }
+    var extra = [
+      ['solid-first', function (a, b) { return (a.fragile - b.fragile) || (b.vol - a.vol) || cmpId(a, b); }],
+      ['fragile-first', function (a, b) { return (b.fragile - a.fragile) || (b.vol - a.vol) || cmpId(a, b); }],
+      ['footprint', function (a, b) {
+        function fp(u) { return u.vol / Math.min(u.dims[0], u.dims[1], u.dims[2]); }
+        return (fp(b) - fp(a)) || cmpId(a, b);
+      }],
+      ['solid-weight', function (a, b) { return (a.fragile - b.fragile) || (b.weight - a.weight) || cmpId(a, b); }]
+    ];
+    for (var e = 0; e < extra.length; e++) {
+      var r2 = tryStrategy(box, units.slice().sort(extra[e][1]));
+      if (r2) return { ok: true, reason: null, placements: r2, strategy: extra[e][0] };
+    }
+    var restarts = opts.restarts === undefined ? 40 : opts.restarts;
+    for (var k = 0; k < restarts; k++) {            // seeded shuffles: deterministic
+      var rnd = PB.mulberry32(1000 + k), arr = units.slice(), j, t;
+      for (j = arr.length - 1; j > 0; j--) { var m = Math.floor(rnd() * (j + 1)); t = arr[j]; arr[j] = arr[m]; arr[m] = t; }
+      if (k % 2) arr = arr.map(function (u, i) { return { u: u, i: i }; })
+        .sort(function (a, b) { return (a.u.fragile - b.u.fragile) || (a.i - b.i); }).map(function (x) { return x.u; });
+      var r3 = tryStrategy(box, arr);
+      if (r3) return { ok: true, reason: null, placements: r3, strategy: 'search' };
+    }
+    return { ok: false, reason: 'does_not_fit', placements: [], strategy: null };
+  };
+
+  // ================================================================ VERIFIER
+  /* Written independently: shares no helper with the engine. Re-derives expected
+   * item set, padded dims, weights and fragility from the ORIGINAL order lines. */
+  PB.verifyPacking = function (box, placements, orderLines, opts) {
+    var failures = [];
+    var o = opts || {};
+    var tol = 1e-7;
+    var mg = (o.margin && o.margin > 0) ? o.margin : 0;
+    var pad = PB.ASSUMPTIONS.fragilePad;
+
+    // expected multiset and per-item data, derived from scratch
+    var expect = {}, data = {}, order, li, q, found;
+    for (li = 0; li < (orderLines || []).length; li++) {
+      var ln = orderLines[li];
+      if (!ln || !(ln.qty > 0)) continue;
+      expect[ln.sku] = (expect[ln.sku] || 0) + ln.qty;
+      if (!data[ln.sku]) {
+        found = null;
+        if (o.extraItems && o.extraItems[ln.sku]) found = o.extraItems[ln.sku];
+        else for (q = 0; q < PB.ITEMS.length; q++) if (PB.ITEMS[q].id === ln.sku) found = PB.ITEMS[q];
+        if (!found) { failures.push('unknown_item:' + ln.sku); continue; }
+        var dm = [found.L, found.W, found.H];
+        if (o.dims && o.dims[ln.sku] && o.dims[ln.sku].L > 0) dm = [o.dims[ln.sku].L, o.dims[ln.sku].W, o.dims[ln.sku].H];
+        var fr = !!found.fragile;
+        data[ln.sku] = { dims: dm.map(function (v) { return v + mg + (fr ? pad : 0); }), kg: found.kg, fragile: fr };
+      }
+    }
+    var P = placements || [], i, j;
+
+    // a) bounds
+    for (i = 0; i < P.length; i++) {
+      var a = P[i];
+      if (a.x < -tol || a.y < -tol || a.z < -tol || a.x + a.w > box.L + tol || a.y + a.d > box.W + tol || a.z + a.h > box.H + tol) {
+        failures.push('out_of_bounds:' + a.itemId + '#' + a.index);
+      }
+    }
+    // b) pairwise overlap
+    for (i = 0; i < P.length; i++) {
+      for (j = i + 1; j < P.length; j++) {
+        var A = P[i], B = P[j];
+        var dx = Math.min(A.x + A.w, B.x + B.w) - Math.max(A.x, B.x);
+        var dy = Math.min(A.y + A.d, B.y + B.d) - Math.max(A.y, B.y);
+        var dz = Math.min(A.z + A.h, B.z + B.h) - Math.max(A.z, B.z);
+        if (dx > tol && dy > tol && dz > tol) failures.push('overlap:' + A.itemId + '#' + A.index + '/' + B.itemId + '#' + B.index);
+      }
+    }
+    // c) multiset
+    var got = {};
+    P.forEach(function (p) { got[p.itemId] = (got[p.itemId] || 0) + 1; });
+    Object.keys(expect).forEach(function (k) {
+      var diff = (got[k] || 0) - expect[k];
+      if (diff < 0) failures.push('missing:' + k + 'x' + (-diff));
+      if (diff > 0) failures.push('extra:' + k + 'x' + diff);
+    });
+    Object.keys(got).forEach(function (k) { if (!(k in expect)) failures.push('extra:' + k + 'x' + got[k]); });
+    // d) dims are a permutation of padded dims
+    P.forEach(function (p) {
+      var dd = data[p.itemId];
+      if (!dd) return;
+      var e = dd.dims.slice().sort(function (m, n) { return m - n; });
+      var g = [p.w, p.d, p.h].sort(function (m, n) { return m - n; });
+      if (Math.abs(e[0] - g[0]) > tol || Math.abs(e[1] - g[1]) > tol || Math.abs(e[2] - g[2]) > tol) {
+        failures.push('dims_mismatch:' + p.itemId + '#' + p.index);
+      }
+    });
+    // e) weight
+    var tw = 0;
+    P.forEach(function (p) { if (data[p.itemId]) tw += data[p.itemId].kg; });
+    if (tw > box.maxLoad + tol) failures.push('overweight:' + tw);
+    // f) fragile support
+    for (i = 0; i < P.length; i++) {
+      for (j = 0; j < P.length; j++) {
+        if (i === j) continue;
+        var top = P[i], low = P[j];
+        if (!data[top.itemId] || !data[low.itemId]) continue;
+        if (data[top.itemId].fragile || !data[low.itemId].fragile) continue;
+        var ox = Math.min(top.x + top.w, low.x + low.w) - Math.max(top.x, low.x);
+        var oy = Math.min(top.y + top.d, low.y + low.d) - Math.max(top.y, low.y);
+        if (ox > tol && oy > tol && Math.abs(top.z - (low.z + low.h)) < tol) {
+          failures.push('on_fragile:' + top.itemId + '#' + top.index + '>' + low.itemId + '#' + low.index);
+        }
+      }
+    }
+    function clean(prefixes) { return !failures.some(function (f) { return prefixes.some(function (p) { return f.indexOf(p) === 0; }); }); }
+    return { pass: failures.length === 0, failures: failures, checks: {
+      bounds: clean(['out_of_bounds']), overlap: clean(['overlap']), items: clean(['missing', 'extra', 'unknown_item']),
+      orientation: clean(['dims_mismatch']), weight: clean(['overweight']), fragile: clean(['on_fragile']) } };
+  };
+
+  // =================================================================== COST
+  PB.freightFor = function (kg) {
+    var b = PB.ASSUMPTIONS.brackets;
+    for (var i = 0; i < b.length; i++) if (kg <= b[i][0]) return b[i][1];
+    return null; // unsupported
+  };
+  PB.outerDims = function (box) { var a = PB.ASSUMPTIONS.outerAdd; return [box.L + a, box.W + a, box.H + a]; };
+  PB.volumetricKg = function (box) {
+    var o = PB.outerDims(box);
+    return (o[0] * o[1] * o[2]) / PB.ASSUMPTIONS.volDivisor;
+  };
+  PB.chargeableKg = function (box, itemKg) { return Math.max(itemKg + box.own, PB.volumetricKg(box)); };
+  PB.innerVolume = function (box) { return box.L * box.W * box.H; };
+
+  PB.metrics = function (box, orderLines, opts) {
+    var vol = 0, kg = 0;
+    normLines(orderLines).forEach(function (l) {
+      var it = PB.getItem(l.sku, opts);
+      vol += it.L * it.W * it.H * l.qty;   // UNPADDED, no margin
+      kg += it.kg * l.qty;
+    });
+    var inner = PB.innerVolume(box);
+    var empty = inner - vol;
+    var litres = empty / 1000;
+    var fillerCost = litres * PB.ASSUMPTIONS.fillerRate;
+    var actual = kg + box.own;
+    var vkg = PB.volumetricKg(box);
+    var charge = Math.max(actual, vkg);
+    var freight = PB.freightFor(charge);
+    return { itemVol: vol, innerVol: inner, airPct: (empty / inner) * 100, fillerLitres: litres, fillerCost: fillerCost,
+      itemKg: kg, actualKg: actual, volKg: vkg, chargeableKg: charge, freightNOK: freight,
+      boxCost: box.cost, totalCost: freight === null ? null : box.cost + fillerCost + freight };
+  };
+
+  // ============================================================== RECOMMEND
+  function allBoxes(opts) { return PB.BOXES.concat((opts && opts.extraBoxes) || []); }
+
+  function evalBox(box, lines, opts) {
+    var pk = PB.packInBox(box, lines, opts);
+    if (!pk.ok) return { box: box, ok: false, reason: pk.reason };
+    var vf = PB.verifyPacking(box, pk.placements, lines, opts);
+    if (!vf.pass) return { box: box, ok: false, reason: 'verify_failed', failures: vf.failures };
+    var m = PB.metrics(box, lines, opts);
+    if (m.freightNOK === null) return { box: box, ok: false, reason: 'unsupported_weight', metrics: m };
+    return { box: box, ok: true, placements: pk.placements, strategy: pk.strategy, metrics: m, verify: vf };
+  }
+
+  PB.recommend = function (orderLines, opts) {
+    opts = opts || {};
+    var lines = normLines(orderLines);
+    var res = { state: null, lines: lines, missing: [], provisional: [], tooLarge: [], recommended: null, smallest: null,
+      reasonCode: null, baseline: null, savingsNOK: null, savingsPct: null, airBefore: null, airAfter: null,
+      rejected: [], margin: opts.margin > 0 ? opts.margin : 0 };
+    var li, item;
+    for (li = 0; li < lines.length; li++) {
+      item = PB.getItem(lines[li].sku, opts);
+      if (!item) { res.state = 'RED_CANNOT_PACK'; res.tooLarge.push(lines[li].sku); return res; }
+      if (!item.dimsKnown) res.missing.push(item.id);
+      else if (item.provisional) res.provisional.push(item.id);
+    }
+    if (res.missing.length) { res.state = 'AMBER_MISSING_DIMS'; return res; }
+
+    var boxes = allBoxes(opts);
+    var units = buildUnits(lines, opts);
+    var bad = {};
+    units.forEach(function (u) {
+      var any = boxes.some(function (b) { return fitsEmpty(b, u.dims); });
+      if (!any) bad[u.itemId] = true;
+    });
+    res.tooLarge = Object.keys(bad);
+    if (res.tooLarge.length) { res.state = 'RED_CANNOT_PACK'; return res; }
+
+    var evals = boxes.map(function (b) { return evalBox(b, lines, opts); });
+    var passing = evals.filter(function (e) { return e.ok; });
+    if (!passing.length) {
+      res.state = 'NEEDS_SPLIT';
+      res.rejected = evals.map(function (e) { return { boxId: e.box.id, reason: e.reason }; });
+      return res;
+    }
+    var best = null, smallest = null;
+    passing.forEach(function (e) {
+      var vol = PB.innerVolume(e.box);
+      if (!best || e.metrics.totalCost < best.metrics.totalCost - EPS ||
+          (Math.abs(e.metrics.totalCost - best.metrics.totalCost) <= EPS && vol < PB.innerVolume(best.box))) best = e;
+      if (!smallest || vol < PB.innerVolume(smallest.box)) smallest = e;
+    });
+    res.recommended = best;
+    res.smallest = smallest;
+    if (smallest.box.id !== best.box.id) {
+      res.reasonCode = smallest.metrics.freightNOK > best.metrics.freightNOK ? 'cheaper_freight_bracket' : 'lower_total_cost';
+    }
+    var base = null;
+    passing.forEach(function (e) { if (e.box.id === PB.ASSUMPTIONS.baselineBox) base = e; });
+    if (base) {
+      res.baseline = base;
+      res.savingsNOK = base.metrics.totalCost - best.metrics.totalCost;
+      res.savingsPct = (res.savingsNOK / base.metrics.totalCost) * 100;
+      res.airBefore = base.metrics.airPct;
+    }
+    res.airAfter = best.metrics.airPct;
+    evals.forEach(function (e) {
+      if (e === best) return;
+      res.rejected.push({ boxId: e.box.id, reason: e.ok ? 'more_expensive' : e.reason });
+    });
+    var unconfirmed = res.provisional.length > 0;
+    res.state = unconfirmed ? 'AMBER_PROVISIONAL' : 'GREEN_VERIFIED';
+    return res;
+  };
+
+  // ================================================================== SPLIT
+  function lite(opts) { var o = {}, k; for (k in opts) o[k] = opts[k]; o.restarts = 6; return o; }
+  function withUnit(lines, id) {
+    var out = lines.map(function (l) { return { sku: l.sku, qty: l.qty }; }), f = false;
+    out.forEach(function (l) { if (l.sku === id) { l.qty++; f = true; } });
+    if (!f) out.push({ sku: id, qty: 1 });
+    return out;
+  }
+  function parcelCost(lines, opts) {
+    var boxes = allBoxes(opts), best = null;
+    for (var i = 0; i < boxes.length; i++) {
+      var e = evalBox(boxes[i], lines, opts);
+      if (e.ok && (best === null || e.metrics.totalCost < best)) best = e.metrics.totalCost;
+    }
+    return best;   // null = infeasible
+  }
+  // strategy A: first-fit decreasing. strategy B: put each unit where it adds the least cost.
+  function buildParcels(units, opts, byCost) {
+    var parcels = [], costs = [];
+    for (var u = 0; u < units.length; u++) {
+      var pick = -1, pickCost = null, bestDelta = null, id = units[u].itemId;
+      for (var p = 0; p < parcels.length; p++) {
+        var cand = withUnit(parcels[p], id), c = parcelCost(cand, opts);
+        if (c === null) continue;
+        if (!byCost) { pick = p; pickCost = c; break; }
+        var d = c - costs[p];
+        if (bestDelta === null || d < bestDelta - EPS) { bestDelta = d; pick = p; pickCost = c; }
+      }
+      if (pick >= 0) {
+        var np = withUnit(parcels[pick], id);
+        if (byCost && parcels.length < PB.ASSUMPTIONS.maxParcels) {
+          var sc = parcelCost([{ sku: id, qty: 1 }], opts);
+          if (sc !== null && sc < bestDelta - EPS) pick = -1;   // a new parcel is cheaper than adding
+        }
+        if (pick >= 0) { parcels[pick] = np; costs[pick] = pickCost; continue; }
+      }
+      var single = [{ sku: id, qty: 1 }], sc2 = parcelCost(single, opts);
+      if (parcels.length >= PB.ASSUMPTIONS.maxParcels || sc2 === null) return null;
+      parcels.push(single); costs.push(sc2);
+    }
+    return parcels;
+  }
+
+  PB.splitOrder = function (orderLines, opts) {
+    opts = opts || {};
+    var fail = { state: 'RED_CANNOT_PACK', parcels: [], parcelCount: 0, totalCost: null, messageKey: 'cannot_pack' };
+    var units = buildUnits(orderLines, opts).sort(function (a, b) {
+      if (b.rawVol !== a.rawVol) return b.rawVol - a.rawVol;
+      if (a.itemId !== b.itemId) return a.itemId < b.itemId ? -1 : 1;
+      return a.index - b.index;
+    });
+    var lo = lite(opts), best = null;
+    [false, true].forEach(function (byCost) {
+      var parcels = buildParcels(units, lo, byCost);
+      if (!parcels) return;
+      var out = [], total = 0;
+      for (var k = 0; k < parcels.length; k++) {
+        var rec = PB.recommend(parcels[k], opts);
+        if (!rec.recommended) return;
+        out.push({ lines: parcels[k], rec: rec });
+        total += rec.recommended.metrics.totalCost;
+      }
+      if (!best || total < best.totalCost - EPS || (Math.abs(total - best.totalCost) <= EPS && out.length < best.parcelCount)) {
+        best = { state: 'NEEDS_SPLIT', parcels: out, parcelCount: out.length, totalCost: total, messageKey: null };
+      }
+    });
+    if (!best) return fail;
+    best.provisional = best.parcels.some(function (p) { return p.rec.state !== 'GREEN_VERIFIED'; });
+    return best;
+  };
+
+  /* Top level: recommend, and split when no single box works. */
+  PB.solve = function (orderLines, opts) {
+    var rec = PB.recommend(orderLines, opts);
+    if (rec.state !== 'NEEDS_SPLIT') return { state: rec.state, rec: rec, split: null };
+    var sp = PB.splitOrder(orderLines, opts);
+    return { state: sp.state, rec: rec, split: sp };
+  };
+
+  // ============================================================== LEARNING
+  PB.comboKey = function (lines) {
+    return normLines(lines).map(function (l) { return l.sku + ':' + l.qty; }).sort().join(',');
+  };
+  PB.MAX_REJECTS = 3;
+  PB.marginFor = function (rejects, lines) {
+    var n = (rejects && rejects[PB.comboKey(lines)]) || 0;
+    return Math.min(PB.MAX_REJECTS, n) * 1.0;
+  };
+  PB.addReject = function (rejects, lines) {
+    var out = {}, k;
+    for (k in (rejects || {})) out[k] = rejects[k];
+    var key = PB.comboKey(lines);
+    out[key] = Math.min(PB.MAX_REJECTS, (out[key] || 0) + 1);
+    return out;
+  };
+
+  // ======================================================== MISSING DIMENSIONS
+  PB.validateDims = function (l, w, h) {
+    var v = [l, w, h].map(function (x) { return (typeof x === 'string' && x.trim() === '') ? NaN : Number(x); });
+    for (var i = 0; i < 3; i++) if (!isFinite(v[i]) || !(v[i] > 0) || !(v[i] < 200)) return { ok: false, code: 'bad_dims' };
+    return { ok: true, L: v[0], W: v[1], H: v[2] };
+  };
+  PB.TNP = { start: [30, 20, 5], step: 2, maxTries: 3 };
+  PB.tnpDims = function (tries) { return { L: PB.TNP.start[0], W: PB.TNP.start[1], H: PB.TNP.start[2] + PB.TNP.step * tries }; };
+
+  // =================================================================== IMPORT
+  PB.fromHolioOrder = function (json) {
+    var errors = [];
+    function err(code, detail, msg) { errors.push({ code: code, detail: detail === undefined ? '' : String(detail), message: msg }); }
+    var data = json;
+    if (typeof json === 'string') {
+      try { data = JSON.parse(json); } catch (e) { err('not_json', '', 'Input is not valid JSON'); return { ok: false, orderId: null, lines: [], errors: errors }; }
+    }
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+      err('not_object', '', 'Order must be a JSON object');
+      return { ok: false, orderId: null, lines: [], errors: errors };
+    }
+    var orderId = null;
+    if ((typeof data.orderId === 'string' && data.orderId.trim()) || typeof data.orderId === 'number') orderId = String(data.orderId).trim();
+    else err('bad_order_id', '', 'orderId is missing or invalid');
+    if (!Array.isArray(data.lines) || data.lines.length === 0) {
+      err('no_lines', '', 'lines must be a non-empty array');
+      return { ok: false, orderId: orderId, lines: [], errors: errors };
+    }
+    var lines = [], total = 0;
+    data.lines.forEach(function (ln, i) {
+      var pos = i + 1;
+      if (!ln || typeof ln !== 'object' || Array.isArray(ln)) { err('line_not_object', pos, 'Line ' + pos + ' is not an object'); return; }
+      var q = ln.qty;
+      if (typeof q !== 'number' || !isFinite(q) || Math.floor(q) !== q || q < 1 || q > PB.ASSUMPTIONS.maxQtyPerLine) {
+        err('bad_qty', pos, 'Line ' + pos + ': qty must be an integer 1-' + PB.ASSUMPTIONS.maxQtyPerLine); return;
+      }
+      var item = null;
+      if (ln.sku !== undefined && ln.sku !== null && ln.sku !== '') item = PB.findItemByCode(ln.sku);
+      if (!item && ln.ean !== undefined && ln.ean !== null && ln.ean !== '') item = PB.findItemByCode(ln.ean);
+      if (!item) {
+        var code = (ln.sku !== undefined && ln.sku !== null && ln.sku !== '') ? ln.sku : ln.ean;
+        err(code === undefined ? 'missing_code' : 'unknown_item', code === undefined ? pos : code, 'Line ' + pos + ': unknown or missing sku/ean');
+        return;
+      }
+      total += q;
+      lines.push({ sku: item.id, qty: q });
+    });
+    if (total > PB.ASSUMPTIONS.maxUnitsPerOrder) err('too_many_units', total, 'Max ' + PB.ASSUMPTIONS.maxUnitsPerOrder + ' units per order');
+    return { ok: errors.length === 0 && lines.length > 0, orderId: orderId, lines: normLines(lines), errors: errors };
+  };
+
+  // ==================================================================== QUEUE
+  PB.QUEUE_MAX = 20;
+  PB.queueAdd = function (queue, order) {
+    return [order].concat(queue || []).slice(0, PB.QUEUE_MAX);
+  };
+  PB.randomOrder = function (rng, seq) {
+    var known = PB.ITEMS.filter(function (i) { return i.dimsKnown; });
+    var n = 1 + Math.floor(rng() * 4), lines = [], used = {};
+    for (var i = 0; i < n; i++) {
+      var it = known[Math.floor(rng() * known.length)];
+      if (used[it.id]) continue;
+      used[it.id] = 1;
+      lines.push({ sku: it.id, qty: 1 + Math.floor(rng() * 2) });
+    }
+    return { id: 'H-' + (1000 + seq), lines: lines };
+  };
+
+  // ============================================================== PACK STEPS
+  /* Ordered by z then weight desc. Dims shown are the real item dims in placed orientation. */
+  PB.packSteps = function (placements, opts) {
+    var margin = (opts && opts.margin) > 0 ? opts.margin : 0;
+    var zs = [];
+    placements.forEach(function (p) { if (zs.indexOf(p.z) < 0) zs.push(p.z); });
+    zs.sort(function (a, b) { return a - b; });
+    return placements.slice().sort(function (a, b) {
+      return (a.z - b.z) || (b.weight - a.weight) || (a.itemId < b.itemId ? -1 : a.itemId > b.itemId ? 1 : 0) || (a.index - b.index);
+    }).map(function (p, i) {
+      var pad = margin + (p.fragile ? PB.ASSUMPTIONS.fragilePad : 0);
+      return { n: i + 1, itemId: p.itemId, index: p.index, fragile: p.fragile, x: p.x, y: p.y, z: p.z,
+        dims: [p.w - pad, p.d - pad, p.h - pad], layer: zs.indexOf(p.z) + 1, rotated: p.rotated };
+    });
+  };
+  PB.layerZs = function (placements) {
+    var zs = [];
+    placements.forEach(function (p) { if (zs.indexOf(p.z) < 0) zs.push(p.z); });
+    return zs.sort(function (a, b) { return a - b; });
+  };
+
+  // ============================================================== MISSING BOX
+  PB.candidateBoxes = function () {
+    var vals = [15, 20, 25, 30, 35, 40, 45, 50, 60], out = [];
+    for (var a = 0; a < vals.length; a++) for (var b = 0; b <= a; b++) for (var c = 0; c <= b; c++) {
+      var L = vals[a], W = vals[b], H = vals[c];
+      if (H > 30) continue;
+      out.push({ id: 'N' + L + 'x' + W + 'x' + H, name: L + 'x' + W + 'x' + H, L: L, W: W, H: H, own: 0.2, maxLoad: 10,
+        cost: 4 + 0.0004 * L * W * H, candidate: true });
+    }
+    return out;
+  };
+
+  /* base: [{lines, opts, total, litres}] for fully-known orders. Re-runs recommend() with the
+   * candidate box added; counts an order only if the candidate is chosen and cheaper. */
+  PB.evalCandidate = function (cand, base) {
+    var sav = 0, lit = 0, n = 0;
+    base.forEach(function (b) {
+      var o = {}, k;
+      for (k in b.opts) o[k] = b.opts[k];
+      o.extraBoxes = [cand];
+      var r = PB.recommend(b.lines, o);
+      if (r.recommended && r.recommended.box.id === cand.id && r.recommended.metrics.totalCost < b.total - 1e-9) {
+        sav += b.total - r.recommended.metrics.totalCost;
+        lit += b.litres - r.recommended.metrics.fillerLitres;
+        n++;
+      }
+    });
+    return { savings: sav, litres: lit, n: n };
+  };
+  /* Portfolio headline: savings vs the B5 baseline across solve() results (single-box orders only). */
+  PB.headline = function (solves) {
+    var nok = 0, litres = 0, base = 0, n = 0;
+    solves.forEach(function (s) {
+      var r = s && s.rec;
+      if (!r || !r.recommended || !r.baseline || s.state === 'NEEDS_SPLIT' || r.state === 'AMBER_PROVISIONAL') return;
+      nok += r.savingsNOK; litres += r.baseline.metrics.fillerLitres - r.recommended.metrics.fillerLitres;
+      base += r.baseline.metrics.totalCost; n++;
+    });
+    return { nok: nok, litres: litres, n: n, pct: base > 0 ? nok / base * 100 : 0 };
+  };
+  /* total NOK and filler litres of a solve() result */
+  PB.solveTotals = function (s) {
+    if (s.split && s.state === 'NEEDS_SPLIT') {
+      var l = 0; s.split.parcels.forEach(function (p) { l += p.rec.recommended.metrics.fillerLitres; });
+      return { total: s.split.totalCost, litres: l };
+    }
+    if (s.rec && s.rec.recommended) return { total: s.rec.recommended.metrics.totalCost, litres: s.rec.recommended.metrics.fillerLitres };
+    return null;
+  };
+
+  if (typeof module !== 'undefined' && module.exports) module.exports = PB;
+  else root.PB = PB;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* PakkBevis tests: runnable in Node and in the browser Selvtest tab. */
+(function (root) {
+  'use strict';
+
+  function run(PB, I18N, opts) {
+    opts = opts || {};
+    var heavy = opts.heavy !== false;
+    var results = [];
+    function now() { return (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now(); }
+    function ok(c, msg) { if (!c) throw new Error(msg || 'assertion failed'); }
+    function eq(a, b, msg) { if (a !== b) throw new Error((msg || 'not equal') + ': got ' + a + ', expected ' + b); }
+    function near(a, b, tol, msg) { if (Math.abs(a - b) > tol) throw new Error((msg || 'not near') + ': got ' + a + ', expected ' + b); }
+    function has(list, prefix) { return list.some(function (f) { return f.indexOf(prefix) === 0; }); }
+    function def(id, name, fn, onlyHeavy) {
+      if (onlyHeavy && !heavy) return;
+      var t0 = now(), pass = true, msg = '';
+      try { fn(); } catch (e) { pass = false; msg = e && e.message ? e.message : String(e); }
+      results.push({ id: id, name: name, pass: pass, msg: msg, ms: now() - t0 });
+    }
+
+    var B4 = PB.BOXES[3], B5 = PB.BOXES[4], B6 = PB.BOXES[5];
+    var BIG = { BIG: { id: 'BIG', no: 'Stor', en: 'Huge', L: 100, W: 10, H: 10, kg: 1, fragile: false, ean: '1', dimsKnown: true } };
+    var LONG = { LONG: { id: 'LONG', no: 'Lang', en: 'Long', L: 10, W: 10, H: 60, kg: 0.5, fragile: false, ean: '2', dimsKnown: true } };
+    var DIMS15 = { SKU15: { L: 10, W: 10, H: 3 } };
+    function lines(o) { return PB.getOrder(o).lines; }
+    function pl(id, i, x, y, z, w, d, h, f) { return { itemId: id, index: i, x: x, y: y, z: z, w: w, d: d, h: h, fragile: !!f, weight: 0 }; }
+
+    def('T1', 'item larger than every box -> RED_CANNOT_PACK', function () {
+      var r = PB.recommend([{ sku: 'BIG', qty: 1 }], { extraItems: BIG });
+      eq(r.state, 'RED_CANNOT_PACK'); eq(r.recommended, null);
+      var s = PB.solve([{ sku: 'BIG', qty: 1 }], { extraItems: BIG });
+      eq(s.state, 'RED_CANNOT_PACK');
+    });
+    def('T2', 'verifier fails on two items at same point', function () {
+      var v = PB.verifyPacking(B4, [pl('SKU01', 0, 0, 0, 0, 28, 22, 3), pl('SKU01', 1, 0, 0, 0, 28, 22, 3)], [{ sku: 'SKU01', qty: 2 }]);
+      ok(!v.pass && has(v.failures, 'overlap'), JSON.stringify(v));
+    });
+    def('T3', 'verifier fails on out-of-bounds placement', function () {
+      var v = PB.verifyPacking(B4, [pl('SKU01', 0, 20, 0, 0, 28, 22, 3)], [{ sku: 'SKU01', qty: 1 }]);
+      ok(!v.pass && has(v.failures, 'out_of_bounds'), JSON.stringify(v));
+    });
+    def('T4', 'verifier fails when weight > maxLoad', function () {
+      var box = { id: 'X', L: 100, W: 100, H: 100, own: 0.1, maxLoad: 1, cost: 1 };
+      var v = PB.verifyPacking(box, [pl('SKU03', 0, 0, 0, 0, 33, 22, 12), pl('SKU03', 1, 40, 0, 0, 33, 22, 12)], [{ sku: 'SKU03', qty: 2 }]);
+      ok(!v.pass && has(v.failures, 'overweight'), JSON.stringify(v));
+    });
+    def('T5', 'verifier fails when non-fragile rests on fragile', function () {
+      var v = PB.verifyPacking(B4, [pl('SKU05', 0, 0, 0, 0, 13, 13, 12, true), pl('SKU01', 0, 0, 0, 12, 28, 22, 3)],
+        [{ sku: 'SKU05', qty: 1 }, { sku: 'SKU01', qty: 1 }]);
+      ok(!v.pass && has(v.failures, 'on_fragile'), JSON.stringify(v));
+    });
+    def('T6', 'verifier fails when item missing or extra', function () {
+      var miss = PB.verifyPacking(B4, [pl('SKU01', 0, 0, 0, 0, 28, 22, 3)], [{ sku: 'SKU01', qty: 2 }]);
+      ok(!miss.pass && has(miss.failures, 'missing'), JSON.stringify(miss));
+      var extra = PB.verifyPacking(B4, [pl('SKU01', 0, 0, 0, 0, 28, 22, 3), pl('SKU09', 0, 0, 0, 5, 15, 10, 3)], [{ sku: 'SKU01', qty: 1 }]);
+      ok(!extra.pass && has(extra.failures, 'extra'), JSON.stringify(extra));
+    });
+    def('T7', 'all demo orders: every recommended/parcel box passes verifier', function () {
+      var o = { dims: DIMS15 };
+      PB.ORDERS.forEach(function (ord) {
+        var s = PB.solve(ord.lines, o);
+        if (s.split && s.state === 'NEEDS_SPLIT') {
+          ok(s.split.parcels.length >= 1, ord.id + ' no parcels');
+          s.split.parcels.forEach(function (p) {
+            var v = PB.verifyPacking(p.rec.recommended.box, p.rec.recommended.placements, p.lines, o);
+            ok(v.pass, ord.id + ' parcel ' + JSON.stringify(v));
+          });
+        } else {
+          ok(s.rec.recommended, ord.id + ' no box, state ' + s.state);
+          var v2 = PB.verifyPacking(s.rec.recommended.box, s.rec.recommended.placements, ord.lines, o);
+          ok(v2.pass, ord.id + ' ' + JSON.stringify(v2));
+        }
+      });
+    });
+    def('T8', 'O1001 recommends box smaller than B5 and saves money', function () {
+      var r = PB.recommend(lines('O1001'));
+      eq(r.state, 'GREEN_VERIFIED');
+      ok(PB.innerVolume(r.recommended.box) < PB.innerVolume(B5), 'not smaller: ' + r.recommended.box.id);
+      ok(r.savingsNOK > 0, 'no savings ' + r.savingsNOK);
+    });
+    def('T9', 'O1004 -> NEEDS_SPLIT into >=2 verified parcels', function () {
+      var s = PB.solve(lines('O1004'));
+      eq(s.state, 'NEEDS_SPLIT'); ok(s.split.parcelCount >= 2, 'parcels ' + s.split.parcelCount);
+      ok(s.split.parcelCount <= PB.ASSUMPTIONS.maxParcels, 'too many parcels');
+      s.split.parcels.forEach(function (p) {
+        ok(PB.verifyPacking(p.rec.recommended.box, p.rec.recommended.placements, p.lines).pass, 'parcel fails verify');
+      });
+    });
+    def('T10', 'O1006 AMBER_MISSING_DIMS; after 10x10x3 -> GREEN_VERIFIED', function () {
+      var a = PB.recommend(lines('O1006'));
+      eq(a.state, 'AMBER_MISSING_DIMS'); eq(a.missing[0], 'SKU15'); eq(a.recommended, null);
+      var b = PB.recommend(lines('O1006'), { dims: DIMS15 });
+      eq(b.state, 'GREEN_VERIFIED');
+      var c = PB.recommend(lines('O1006'), { dims: { SKU15: { L: 30, W: 20, H: 5, provisional: true } } });
+      eq(c.state, 'AMBER_PROVISIONAL');
+    });
+    def('T11', 'long item fits B6 only via rotation', function () {
+      var ln = [{ sku: 'LONG', qty: 1 }], o = { extraItems: LONG };
+      var p = PB.packInBox(B6, ln, o);
+      ok(p.ok, 'B6 should fit'); ok(p.placements[0].rotated, 'not rotated'); eq(p.placements[0].w, 60);
+      ok(PB.verifyPacking(B6, p.placements, ln, o).pass, 'verifier');
+      ok(!PB.packInBox(B5, ln, o).ok, 'B5 should not fit');
+      eq(PB.recommend(ln, o).recommended.box.id, 'B6');
+    });
+    def('T12', 'chargeable weight 41x31x21 = 26691/5000', function () {
+      near(PB.volumetricKg(B4), 5.3382, 1e-9);
+      near(PB.chargeableKg(B4, 0.75), 5.3382, 1e-9);   // 0.75 + 0.25 own = 1 kg actual
+    });
+    def('T13', 'every I18N key exists in NO/EN and none empty', function () {
+      var langs = ['NO', 'EN'], keys = Object.keys(I18N.NO);
+      ok(keys.length > 0, 'no keys');
+      langs.forEach(function (l) {
+        ok(I18N[l], 'missing lang ' + l);
+        keys.forEach(function (k) {
+          ok(typeof I18N[l][k] === 'string' && I18N[l][k].trim() !== '', 'empty/missing ' + l + '.' + k);
+        });
+        Object.keys(I18N[l]).forEach(function (k) { ok(k in I18N.NO, 'extra key ' + l + '.' + k); });
+      });
+    });
+    def('T14', 'fuzz: 300 orders, mulberry32(42), zero violations', function () {
+      var rng = PB.mulberry32(42), known = PB.ITEMS.filter(function (i) { return i.dimsKnown; }), viol = [];
+      var t0 = now(), counts = { single: 0, split: 0, red: 0 };
+      for (var n = 0; n < 300; n++) {
+        var cnt = 1 + Math.floor(rng() * 8), ls = [];
+        for (var i = 0; i < cnt; i++) ls.push({ sku: known[Math.floor(rng() * known.length)].id, qty: 1 + Math.floor(rng() * 3) });
+        var s = PB.solve(ls);
+        if (s.rec.recommended && s.state !== 'NEEDS_SPLIT') {
+          counts.single++;
+          if (!PB.verifyPacking(s.rec.recommended.box, s.rec.recommended.placements, PB.normLines(ls)).pass) viol.push('order ' + n + ' single');
+        } else if (s.state === 'NEEDS_SPLIT') {
+          counts.split++;
+          s.split.parcels.forEach(function (p) {
+            if (!PB.verifyPacking(p.rec.recommended.box, p.rec.recommended.placements, p.lines).pass) viol.push('order ' + n + ' parcel');
+          });
+          var tot = 0; s.split.parcels.forEach(function (p) { p.lines.forEach(function (l) { tot += l.qty; }); });
+          var want = 0; PB.normLines(ls).forEach(function (l) { want += l.qty; });
+          if (tot !== want) viol.push('order ' + n + ' unit count ' + tot + '/' + want);
+        } else if (s.state === 'RED_CANNOT_PACK') counts.red++;
+        else viol.push('order ' + n + ' bad state ' + s.state);
+      }
+      var dt = now() - t0;
+      if (typeof console !== 'undefined' && opts.log) opts.log('fuzz ' + JSON.stringify(counts) + ' in ' + Math.round(dt) + ' ms');
+      ok(viol.length === 0, viol.slice(0, 3).join('; '));
+      ok(dt < 20000, 'fuzz took ' + Math.round(dt) + ' ms');
+    }, true);
+    def('T15', 'freight bracket edges', function () {
+      eq(PB.freightFor(1.0), 49); eq(PB.freightFor(1.0001), 59); eq(PB.freightFor(25), 219); eq(PB.freightFor(25.01), null);
+      eq(PB.freightFor(2), 59); eq(PB.freightFor(2.0001), 79); eq(PB.freightFor(5), 79); eq(PB.freightFor(10), 119); eq(PB.freightFor(15), 159);
+    });
+    def('T16', 'learning: a rejected fit raises margin, still verified', function () {
+      var ls = lines('O1002'), r0 = PB.recommend(ls);
+      eq(PB.marginFor({}, ls), 0);
+      var rej = PB.addReject({}, ls);
+      eq(PB.marginFor(rej, ls), 1);
+      var o = { margin: PB.marginFor(rej, ls) };
+      var r1 = PB.recommend(ls, o);
+      eq(r1.state, 'GREEN_VERIFIED'); eq(r1.margin, 1);
+      ok(PB.verifyPacking(r1.recommended.box, r1.recommended.placements, ls, o).pass, 'verify with margin');
+      ok(r1.recommended.metrics.totalCost >= r0.recommended.metrics.totalCost - 1e-9, 'margin should not reduce cost');
+      var rej2 = PB.addReject(PB.addReject(PB.addReject(rej, ls), ls), ls);
+      eq(PB.marginFor(rej2, ls), 3);   // capped at 3
+      eq(PB.comboKey([{ sku: 'SKU04', qty: 1 }, { sku: 'SKU03', qty: 1 }]), 'SKU03:1,SKU04:1');
+    });
+    def('T17', 'determinism', function () {
+      PB.ORDERS.forEach(function (o) {
+        eq(JSON.stringify(PB.solve(o.lines, { dims: DIMS15 })), JSON.stringify(PB.solve(o.lines, { dims: DIMS15 })), o.id);
+      });
+    });
+    def('T18', 'fromHolioOrder validation', function () {
+      var a = PB.fromHolioOrder({ orderId: 'H-1', lines: [{ sku: 'SKU03', qty: 1 }] });
+      ok(a.ok && a.lines[0].sku === 'SKU03', 'by sku');
+      var b = PB.fromHolioOrder(JSON.stringify({ orderId: 'H-2', lines: [{ ean: '7000000000042', qty: 2 }] }));
+      ok(b.ok && b.lines[0].sku === 'SKU04' && b.lines[0].qty === 2, 'by ean');
+      var bad = [
+        { orderId: 'X', lines: [{ sku: 'NOPE', qty: 1 }] },
+        { orderId: 'X', lines: [{ sku: 'SKU01', qty: 0 }] },
+        { orderId: 'X', lines: [{ sku: 'SKU01', qty: -2 }] },
+        { orderId: 'X', lines: [{ sku: 'SKU01', qty: 1.5 }] },
+        { orderId: 'X' },
+        { orderId: 'X', lines: [] },
+        { orderId: 'X', lines: [null] },
+        '{not json', null, 42, [], undefined
+      ];
+      bad.forEach(function (x, i) {
+        var r;
+        try { r = PB.fromHolioOrder(x); } catch (e) { throw new Error('threw on bad input ' + i); }
+        ok(r.ok === false && r.errors.length > 0 && r.errors[0].code && r.errors[0].message, 'bad input ' + i + ' not rejected');
+      });
+    });
+    def('T19', 'performance: recommend() 30 units < 100 ms', function () {
+      var ls = [{ sku: 'SKU01', qty: 6 }, { sku: 'SKU09', qty: 6 }, { sku: 'SKU13', qty: 6 }, { sku: 'SKU10', qty: 6 }, { sku: 'SKU12', qty: 6 }];
+      PB.recommend(ls);                                  // warm up
+      var t0 = now(); var r = PB.recommend(ls); var dt = now() - t0;
+      ok(r.state, 'no state');
+      ok(dt < 100, 'recommend took ' + dt.toFixed(1) + ' ms');
+      var worst = 0;
+      PB.ORDERS.forEach(function (o) { var t = now(); PB.solve(o.lines, { dims: DIMS15 }); worst = Math.max(worst, now() - t); });
+      ok(worst < 1000, 'solve took ' + worst.toFixed(1) + ' ms');
+    });
+    def('T20', 'live queue keeps newest 20', function () {
+      var q = [];
+      for (var i = 1; i <= 25; i++) q = PB.queueAdd(q, { id: 'H-' + i, lines: [] });
+      eq(q.length, 20); eq(q[0].id, 'H-25'); eq(q[19].id, 'H-6');
+    });
+
+    def('T21', 'stronger search: O1003 now fits B4 and saves vs B5', function () {
+      var r = PB.recommend(lines('O1003'));
+      eq(r.state, 'GREEN_VERIFIED'); eq(r.recommended.box.id, 'B4'); ok(r.savingsNOK > 0, 'savings ' + r.savingsNOK);
+      ok(PB.verifyPacking(r.recommended.box, r.recommended.placements, lines('O1003')).pass, 'verifier');
+    });
+    def('T22', 'verifier reports six named checks', function () {
+      var r = PB.recommend(lines('O1003')), v = PB.verifyPacking(r.recommended.box, r.recommended.placements, lines('O1003'));
+      ['bounds', 'overlap', 'items', 'orientation', 'weight', 'fragile'].forEach(function (k) { eq(v.checks[k], true, 'check ' + k); });
+      var bad = PB.verifyPacking(B4, [pl('SKU01', 0, 0, 0, 0, 28, 22, 3), pl('SKU01', 1, 0, 0, 0, 28, 22, 3)], [{ sku: 'SKU01', qty: 2 }]);
+      eq(bad.checks.overlap, false); eq(bad.checks.bounds, true);
+    });
+    def('T23', 'split is never worse than first-fit and headline saves money', function () {
+      var s = PB.splitOrder(lines('O1004'));
+      eq(s.state, 'NEEDS_SPLIT'); ok(s.parcelCount <= 4, 'parcels');
+      ok(s.totalCost <= 458.85, 'split cost ' + s.totalCost);
+      var h = PB.headline(PB.ORDERS.map(function (o) { return PB.solve(o.lines, { dims: DIMS15 }); }));
+      ok(h.nok > 0 && h.litres > 0 && h.n >= 4, 'headline ' + JSON.stringify(h));
+    });
+
+    return results;
+  }
+
+  var T = { run: run };
+  if (typeof module !== 'undefined' && module.exports) module.exports = T;
+  else root.PBTests = T;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* PakkBevis SVG drawing (DOM code, no libraries). Uses textContent / attributes only. */
+(function (root) {
+  'use strict';
+  var NS = 'http://www.w3.org/2000/svg';
+  var uid = 0;
+
+  function el(tag, attrs, parent) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function text(parent, x, y, size, str, fill) {
+    var t = el('text', { x: x, y: y, 'font-size': size, 'text-anchor': 'middle', 'dominant-baseline': 'central', fill: fill || '#111', 'font-weight': '700' }, parent);
+    t.textContent = str;
+    return t;
+  }
+  function f1(v) { return String(Math.round(v * 10) / 10); }
+
+  var V = {};
+  V.colorOf = function (id) {
+    var n = parseInt(String(id).replace(/\D/g, ''), 10) || 0;
+    return 'hsl(' + ((n * 47) % 360) + ',62%,66%)';
+  };
+  V.label = function (id) { return String(id).replace(/^SKU/, ''); };
+
+  V.topView = function (box, placements, layerZ, ariaLabel) {
+    var id = 'hatch' + (++uid), pad = 2;
+    var s = el('svg', { viewBox: (-pad) + ' ' + (-pad) + ' ' + (box.L + 2 * pad) + ' ' + (box.W + 2 * pad), role: 'img', 'aria-label': ariaLabel, class: 'viz' });
+    var defs = el('defs', {}, s);
+    var pat = el('pattern', { id: id, width: 3, height: 3, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' }, defs);
+    el('rect', { width: 3, height: 3, fill: '#fff' }, pat);
+    el('line', { x1: 0, y1: 0, x2: 0, y2: 3, stroke: '#c5ccd6', 'stroke-width': 0.8 }, pat);
+    el('rect', { x: 0, y: 0, width: box.L, height: box.W, fill: 'url(#' + id + ')', stroke: '#334', 'stroke-width': 0.8 }, s);
+    placements.forEach(function (p) {
+      if (p.z > layerZ + 1e-9) return;
+      var cur = Math.abs(p.z - layerZ) < 1e-9;
+      var g = el('g', { opacity: cur ? 1 : 0.35 }, s);
+      var r = el('rect', { x: p.x, y: p.y, width: p.w, height: p.d, fill: V.colorOf(p.itemId), stroke: '#111', 'stroke-width': 0.6 }, g);
+      if (p.fragile) { r.setAttribute('stroke-dasharray', '2 1.2'); r.setAttribute('stroke-width', 1); }
+      if (cur) text(g, p.x + p.w / 2, p.y + p.d / 2, Math.max(2.5, Math.min(6, Math.min(p.w, p.d) * 0.45)), V.label(p.itemId));
+    });
+    return s;
+  };
+
+  V.iso = function (box, placements, ariaLabel) {
+    var c = 0.866, sn = 0.5;
+    function px(x, y) { return (x - y) * c; }
+    function py(x, y, z) { return (x + y) * sn - z; }
+    var minX = -box.W * c - 2, maxX = box.L * c + 2, minY = -box.H - 2, maxY = (box.L + box.W) * sn + 2;
+    var s = el('svg', { viewBox: minX + ' ' + minY + ' ' + (maxX - minX) + ' ' + (maxY - minY), role: 'img', 'aria-label': ariaLabel, class: 'viz' });
+    function poly(pts, fill, stroke, dash, parent) {
+      var p = el('polygon', { points: pts.map(function (q) { return f1(q[0]) + ',' + f1(q[1]); }).join(' '), fill: fill, stroke: stroke, 'stroke-width': 0.5 }, parent || s);
+      if (dash) p.setAttribute('stroke-dasharray', '2 1.2');
+      return p;
+    }
+    poly([[px(0, 0), py(0, 0, 0)], [px(box.L, 0), py(box.L, 0, 0)], [px(box.L, box.W), py(box.L, box.W, 0)], [px(0, box.W), py(0, box.W, 0)]], '#eef1f5', '#334');
+    var list = placements.slice().sort(function (a, b) {
+      return (a.x + a.w / 2 + a.y + a.d / 2 + a.z + a.h / 2) - (b.x + b.w / 2 + b.y + b.d / 2 + b.z + b.h / 2);
+    });
+    list.forEach(function (p) {
+      var col = V.colorOf(p.itemId), x0 = p.x, y0 = p.y, z0 = p.z, x1 = p.x + p.w, y1 = p.y + p.d, z1 = p.z + p.h, dash = p.fragile;
+      var g = el('g', {}, s);
+      poly([[px(x0, y1), py(x0, y1, z0)], [px(x1, y1), py(x1, y1, z0)], [px(x1, y1), py(x1, y1, z1)], [px(x0, y1), py(x0, y1, z1)]], col, '#111', dash, g).setAttribute('filter', 'brightness(0.85)');
+      poly([[px(x1, y0), py(x1, y0, z0)], [px(x1, y1), py(x1, y1, z0)], [px(x1, y1), py(x1, y1, z1)], [px(x1, y0), py(x1, y0, z1)]], col, '#111', dash, g).setAttribute('filter', 'brightness(0.7)');
+      poly([[px(x0, y0), py(x0, y0, z1)], [px(x1, y0), py(x1, y0, z1)], [px(x1, y1), py(x1, y1, z1)], [px(x0, y1), py(x0, y1, z1)]], col, '#111', dash, g);
+      text(g, px((x0 + x1) / 2, (y0 + y1) / 2), py((x0 + x1) / 2, (y0 + y1) / 2, z1), Math.max(2.5, Math.min(5, Math.min(p.w, p.d) * 0.4)), V.label(p.itemId));
+    });
+    return s;
+  };
+
+  /* horizontal bar chart: rows [{label, before, after}] values 0..100 */
+  V.bars = function (rows, labels, ariaLabel) {
+    var rowH = 26, left = 52, W = 320, H = rows.length * rowH + 22;
+    var s = el('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': ariaLabel, class: 'chart' });
+    rows.forEach(function (r, i) {
+      var y = i * rowH + 4, bw = W - left - 36;
+      var t = el('text', { x: 0, y: y + 12, 'font-size': 11, fill: 'currentColor' }, s); t.textContent = r.label;
+      if (r.before !== null) {
+        el('rect', { x: left, y: y, width: Math.max(0.5, bw * r.before / 100), height: 10, fill: '#b8c0cc' }, s);
+        var tb = el('text', { x: left + bw * r.before / 100 + 3, y: y + 9, 'font-size': 9, fill: 'currentColor' }, s); tb.textContent = f1(r.before) + '%';
+      }
+      if (r.after !== null) {
+        el('rect', { x: left, y: y + 11, width: Math.max(0.5, bw * r.after / 100), height: 10, fill: '#0b6e4f' }, s);
+        var ta = el('text', { x: left + bw * r.after / 100 + 3, y: y + 20, 'font-size': 9, fill: 'currentColor' }, s); ta.textContent = f1(r.after) + '%';
+      }
+    });
+    var ly = rows.length * rowH + 8;
+    el('rect', { x: left, y: ly, width: 9, height: 9, fill: '#b8c0cc' }, s);
+    var l1 = el('text', { x: left + 13, y: ly + 8, 'font-size': 10, fill: 'currentColor' }, s); l1.textContent = labels.before;
+    el('rect', { x: left + 110, y: ly, width: 9, height: 9, fill: '#0b6e4f' }, s);
+    var l2 = el('text', { x: left + 123, y: ly + 8, 'font-size': 10, fill: 'currentColor' }, s); l2.textContent = labels.after;
+    return s;
+  };
+
+  root.PBViz = V;
+})(window);
+
+</script>
+<script>
+/* PakkBevis UI: DOM code, calls only PB. All visible text comes from I18N (t()). */
+(function () {
+  'use strict';
+  var PB = window.PB, I18N = window.I18N, V = window.PBViz, T = window.PBTests;
+  var LANGS = ['NO', 'EN'];
+
+  // ---------------------------------------------------------------- storage (R8)
+  var mem = {};
+  function sGet(k) {
+    try { var v = window.localStorage.getItem(k); if (v !== null) return v; } catch (e) { /* blocked */ }
+    return mem[k] === undefined ? null : mem[k];
+  }
+  function sSet(k, v) {
+    mem[k] = v;
+    try { window.localStorage.setItem(k, v); } catch (e) { /* blocked: memory fallback */ }
+  }
+  function jGet(k, dflt) { try { var v = JSON.parse(sGet(k)); return v && typeof v === 'object' ? v : dflt; } catch (e) { return dflt; } }
+
+  // ----------------------------------------------------------------------- state
+  var S = {
+    lang: LANGS.indexOf(sGet('pakkbevis_lang')) >= 0 ? sGet('pakkbevis_lang') : 'NO',
+    tab: 'pack', sel: 'O1001', custom: [], qOrder: null, pickSku: 'SKU01', pickQty: '1',
+    queue: [], seq: 0, rng: PB.mulberry32(2026), auto: false, timer: null, qOpen: false, focusId: null, importOpen: false, importText: '', importErr: null, fresh: null,
+    dims: jGet('pakkbevis_dims', {}), rejects: jGet('pakkbevis_rejects', {}),
+    tnp: null, tnpManual: false, dimIn: { L: '', W: '', H: '' }, dimErr: false,
+    layer: {}, ticks: {}, okKey: null, learnMsg: null, scanVal: '', scanMsg: null, scanTimer: null,
+    mgr: { status: 'idle', best: null, progress: 0 }, mgrCache: {},
+    st: { results: null, fuzz: false, running: false }
+  };
+
+  function coarse() { try { return window.matchMedia('(pointer:coarse)').matches; } catch (e) { return false; } }
+
+  function t(key, p) {
+    var s = (I18N[S.lang] && I18N[S.lang][key]);
+    if (s === undefined) s = I18N.NO[key] !== undefined ? I18N.NO[key] : key;
+    if (p) for (var k in p) s = s.split('{' + k + '}').join(String(p[k]));
+    return s;
+  }
+  function f(x, d) {
+    var s = (Math.round(x * Math.pow(10, d === undefined ? 1 : d)) / Math.pow(10, d === undefined ? 1 : d)).toFixed(d === undefined ? 1 : d);
+    return S.lang === 'EN' ? s : s.replace('.', ',');
+  }
+  function itemName(id) {
+    var it = PB.getItem(id, {});
+    return it ? (S.lang === 'NO' ? it.no : it.en) : id;
+  }
+  function boxLabel(b) { return b.id + ' ' + b.name; }
+  function boxSize(b) { return b.L + '×' + b.W + '×' + b.H; }
+
+  // -------------------------------------------------------------------------- DOM
+  function h(tag, a, kids) {
+    var e = document.createElement(tag), k;
+    a = a || {};
+    for (k in a) {
+      if (k === 'text') e.textContent = a[k];
+      else if (k === 'class') e.className = a[k];
+      else if (k.indexOf('on') === 0 || k === 'value' || k === 'checked' || k === 'disabled' || k === 'open') e[k] = a[k];
+      else e.setAttribute(k, a[k]);
+    }
+    (kids || []).forEach(function (c) { if (c === null || c === undefined || c === false) return; e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); });
+    return e;
+  }
+  function btn(key, cls, on, extra) {
+    var a = { type: 'button', text: t(key), onclick: on };
+    if (cls) a['class'] = cls;
+    if (extra) for (var k in extra) a[k] = extra[k];
+    return h('button', a);
+  }
+  function badge(state) {
+    var c = state === 'GREEN_VERIFIED' ? 'green' : (state === 'RED_CANNOT_PACK' ? 'red' : 'amber');
+    return h('span', { 'class': 'badge ' + c, text: t('state.' + state) });
+  }
+  function stateColor(state) { return state === 'GREEN_VERIFIED' ? 'green' : (state === 'RED_CANNOT_PACK' ? 'red' : 'amber'); }
+
+  // ------------------------------------------------------------------ compute
+  function curOrder() {
+    if (S.sel === 'CUSTOM') return { id: 'CUSTOM', title: t('order.custom'), lines: S.custom };
+    if (S.sel === 'Q' && S.qOrder) return { id: S.qOrder.id, title: S.qOrder.id, lines: S.qOrder.lines };
+    var o = PB.getOrder(S.sel) || PB.ORDERS[0];
+    return { id: o.id, title: o.id + ' – ' + t('order.' + o.id), lines: o.lines };
+  }
+  function dimsMap(lines) {
+    var d = {}, k;
+    for (k in S.dims) d[k] = { L: S.dims[k].L, W: S.dims[k].W, H: S.dims[k].H, estimated: !!S.dims[k].estimated, provisional: false };
+    if (S.tnp) { var p = PB.tnpDims(S.tnp.tries); d[S.tnp.sku] = { L: p.L, W: p.W, H: p.H, provisional: true, estimated: true }; }
+    return d;
+  }
+  function optsFor(lines) { return { dims: dimsMap(lines), margin: PB.marginFor(S.rejects, lines) }; }
+  function unitsOf(lines) { var n = 0; lines.forEach(function (l) { n += l.qty; }); return n; }
+  function persistDims() { sSet('pakkbevis_dims', JSON.stringify(S.dims)); }
+  function persistRejects() { sSet('pakkbevis_rejects', JSON.stringify(S.rejects)); }
+
+  // --------------------------------------------------------------------- render
+  var root = null;
+  function render() {
+    var ae = document.activeElement, fid = ae && ae.id ? ae.id : null, ss = null, se = null;
+    try { if (ae && ae.selectionStart !== undefined) { ss = ae.selectionStart; se = ae.selectionEnd; } } catch (e) { /* non-text input */ }
+    var hgt = root.offsetHeight;
+    root.style.minHeight = hgt + 'px';
+    root.replaceChildren.apply(root, build());
+    root.style.minHeight = '';
+    if (!fid && S.focusId) fid = S.focusId;
+    S.focusId = null;
+    if (fid) {
+      var n = document.getElementById(fid);
+      if (n) { n.focus(); try { if (ss !== null && n.setSelectionRange) n.setSelectionRange(ss, se); } catch (e2) { /* ignore */ } }
+    }
+    document.documentElement.lang = S.lang === 'EN' ? 'en' : 'nb';
+  }
+
+  function build() {
+    var out = [];
+    out.push(h('header', { 'class': 'top' }, [
+      h('div', {}, [h('h1', { text: 'PakkBevis' }), h('p', { 'class': 'tag', text: t('app.tagline') })]),
+      h('div', { 'class': 'langs', role: 'group', 'aria-label': t('lang.label') }, LANGS.map(function (l) {
+        return h('button', { type: 'button', 'class': 'lang', text: l, 'aria-pressed': String(S.lang === l), onclick: function () { S.lang = l; sSet('pakkbevis_lang', l); render(); } });
+      }))
+    ]));
+    out.push(h('nav', { 'class': 'tabs', role: 'tablist' }, ['pack', 'leader', 'selftest'].map(function (k) {
+      return h('button', { type: 'button', 'class': 'tab', role: 'tab', text: t('tab.' + k), 'aria-selected': String(S.tab === k),
+        onclick: function () { S.tab = k; if (k === 'pack' && !coarse()) S.focusId = 'scan'; render(); if (k === 'leader' && S.mgr.status === 'idle') runFinder(); } });
+    })));
+    out.push(h('main', { 'class': 'view-' + S.tab }, S.tab === 'pack' ? viewPack() : S.tab === 'leader' ? viewLeader() : viewSelftest()));
+    out.push(assumptions());
+    out.push(h('footer', {}, [h('p', { text: t('footer.testdata') })]));
+    return out;
+  }
+
+  function assumptions() {
+    var keys = ['as.fragile', 'as.filler', 'as.outer', 'as.charge', 'as.freight', 'as.total', 'as.base', 'as.units'];
+    return h('details', { 'class': 'card' }, [
+      h('summary', {}, [t('as.title'), h('span', { 'class': 'tag-test', text: t('as.badge') })]),
+      h('ul', { 'class': 'clean' }, keys.map(function (k) { return h('li', { text: t(k) }); })),
+      btn('learn.reset', 'danger', resetLearning)
+    ]);
+  }
+
+  // ------------------------------------------------------------------ worker view
+  function viewPack() {
+    var op = orderPanel(), body = [], o = curOrder();
+    if (!o.lines.length) body.push(h('div', { 'class': 'card' }, [h('p', { text: t('order.empty') })]));
+    else {
+      var opts = optsFor(o.lines), s2 = PB.solve(o.lines, opts), rec = s2.rec;
+      if (rec.state === 'AMBER_MISSING_DIMS') body.push(missingCards(rec));
+      else {
+        if (S.tnp) body.push(tnpCard());
+        if (s2.state === 'RED_CANNOT_PACK') {
+          body.push(h('div', { 'class': 'card red' }, [h('div', { 'class': 'head' }, [badge('RED_CANNOT_PACK')]), h('p', { text: t('split.cannot') })]));
+        } else if (s2.state === 'NEEDS_SPLIT') {
+          body.push(h('div', { 'class': 'card amber' }, [
+            h('div', { 'class': 'head' }, [h('h2', { text: t('split.title') }), badge('NEEDS_SPLIT')]),
+            h('p', { 'class': 'boxname', text: t('split.summary', { n: s2.split.parcelCount, t: f(s2.split.totalCost) }) })
+          ]));
+          s2.split.parcels.forEach(function (p, i) {
+            body.push(resultCard(p.rec, p.lines, opts, o.id + '-p' + i, t('split.parcel', { n: i + 1 }) + ' · ' + p.lines.map(function (l) { return l.qty + '× ' + itemName(l.sku); }).join(', ')));
+          });
+          body.push(actionBar(o.lines));
+        } else {
+          body.push(resultCard(rec, o.lines, opts, o.id, t('result.title')));
+          if (!S.tnp) body.push(actionBar(o.lines));
+        }
+      }
+    }
+    return [op.top].concat(body, [op.lines, queuePanel()]);
+  }
+
+  function orderPanel() {
+    var o = curOrder(), sel = h('select', { id: 'orderSel', onchange: function () {
+      S.sel = this.value; S.tnp = null; S.tnpManual = false; S.learnMsg = null; S.okKey = null; render();
+    } });
+    PB.ORDERS.forEach(function (d) { sel.appendChild(h('option', { value: d.id, text: d.id + ' – ' + t('order.' + d.id) })); });
+    sel.appendChild(h('option', { value: 'CUSTOM', text: t('order.custom') }));
+    if (S.qOrder) sel.appendChild(h('option', { value: 'Q', text: S.qOrder.id + ' (' + t('order.queued') + ')' }));
+    sel.value = S.sel;
+    var lines = h('ul', { 'class': 'clean' }, o.lines.map(function (l, i) {
+      var it = PB.getItem(l.sku, { dims: dimsMap(o.lines) });
+      var row = [h('span', { text: l.qty + '× ' + itemName(l.sku) + ' ' }),
+        it.dimsKnown ? h('span', { 'class': 'small', text: '(' + f(it.L) + '×' + f(it.W) + '×' + f(it.H) + ' ' + t('unit.cm') + (it.estimated ? ', ' + t('dims.estimated') : '') + ')' }) : h('strong', { 'class': 'save', text: t('item.unknown') }),
+        it.fragile ? h('strong', { 'class': 'warn', text: t('item.fragile') }) : null];
+      if (S.sel === 'CUSTOM') row.push(h('button', { type: 'button', text: t('custom.remove'), onclick: function () { S.custom.splice(i, 1); render(); } }));
+      return h('li', {}, row);
+    }));
+    var inner = [lines];
+    if (S.sel === 'CUSTOM') inner.push(customBuilder());
+    return {
+      top: h('div', { 'class': 'card topcard' }, [h('div', { 'class': 'row toprow' }, [
+        h('div', {}, [h('label', { 'for': 'orderSel', text: t('order.label') }), sel]), scanner()])]),
+      lines: h('details', { 'class': 'card', open: S.sel === 'CUSTOM' }, [
+        h('summary', { text: t('order.lines') + ' (' + t('order.units', { n: unitsOf(o.lines) }) + ')' })].concat(inner))
+    };
+  }
+
+  function customBuilder() {
+    var pick = h('select', { id: 'pickSku', onchange: function () { S.pickSku = this.value; } });
+    PB.ITEMS.forEach(function (it) { pick.appendChild(h('option', { value: it.id, text: it.id + ' ' + itemName(it.id) })); });
+    pick.value = S.pickSku;
+    var qty = h('input', { id: 'pickQty', type: 'number', min: 1, max: 20, step: 1, value: S.pickQty, oninput: function () { S.pickQty = this.value; } });
+    var msg = S.scanMsg && S.scanMsg.custom ? h('p', { 'class': 'msg err', role: 'alert', text: t('custom.max') }) : null;
+    return h('div', {}, [h('div', { 'class': 'row' }, [
+      h('div', {}, [h('label', { 'for': 'pickSku', text: t('custom.pick') }), pick]),
+      h('div', {}, [h('label', { 'for': 'pickQty', text: t('custom.qty') }), qty]),
+      btn('custom.add', 'primary', function () {
+        var q = parseInt(S.pickQty, 10);
+        if (!(q >= 1 && q <= 20)) q = 1;
+        if (!addCustom(S.pickSku, q)) S.scanMsg = { custom: true };
+        else S.scanMsg = null;
+        render();
+      }),
+      btn('custom.clear', 'danger', function () { S.custom = []; S.scanMsg = null; render(); })
+    ]), msg]);
+  }
+  function addCustom(sku, q) {
+    if (unitsOf(S.custom) + q > PB.ASSUMPTIONS.maxUnitsPerOrder) return false;
+    var f1 = S.custom.filter(function (l) { return l.sku === sku; })[0];
+    if (f1) { if (f1.qty + q > PB.ASSUMPTIONS.maxQtyPerLine) return false; f1.qty += q; } else S.custom.push({ sku: sku, qty: q });
+    return true;
+  }
+
+  function scanner() {
+    var inp = h('input', { id: 'scan', type: 'text', inputmode: 'numeric', autocomplete: 'off', autocapitalize: 'characters', spellcheck: false,
+      value: S.scanVal, 'aria-describedby': 'scanHint',
+      oninput: function () { S.scanVal = this.value; },
+      onkeydown: function (ev) {
+        if (ev.key !== 'Enter') return;
+        ev.preventDefault();
+        var code = this.value, item = PB.findItemByCode(code);
+        S.scanVal = '';
+        if (!item) S.scanMsg = { err: true, text: t('scan.unknown', { code: String(code).trim() || '?' }) };
+        else if (!addCustom(item.id, 1)) S.scanMsg = { err: true, text: t('scan.full') };
+        else { S.sel = 'CUSTOM'; S.tnp = null; S.scanMsg = { err: false, text: t('scan.ok', { item: itemName(item.id) }) }; }
+        clearTimeout(S.scanTimer);
+        var mine = S.scanMsg;
+        S.scanTimer = setTimeout(function () { if (S.scanMsg === mine) { S.scanMsg = null; render(); } }, 3000);
+        render();
+      } });
+    var m = S.scanMsg && S.scanMsg.text ? h('p', { 'class': 'msg ' + (S.scanMsg.err ? 'err' : 'ok'), role: 'status', text: S.scanMsg.text }) : null;
+    return h('div', {}, [h('label', { 'for': 'scan', text: t('scan.label') }), inp,
+      h('p', { id: 'scanHint', 'class': 'small', text: t('scan.hint') }), m]);
+  }
+
+  // --------------------------------------------------------------- live queue
+  function timeNow() { var d = new Date(), p = function (n) { return (n < 10 ? '0' : '') + n; }; return p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds()); }
+  function pushOrder(id, lines) {
+    S.queue = PB.queueAdd(S.queue, { id: id, lines: lines, ts: timeNow() });
+    S.fresh = id;
+  }
+  function setAuto(on) {
+    S.auto = on;
+    if (S.timer) { clearInterval(S.timer); S.timer = null; }
+    if (on) S.timer = setInterval(function () { var o = PB.randomOrder(S.rng, ++S.seq); pushOrder(o.id, o.lines); render(); }, 6000);
+  }
+  function queuePanel() {
+    var list = S.queue.length ? h('ul', { 'class': 'clean queue' }, S.queue.map(function (q) {
+      return h('li', {}, [h('button', { type: 'button', 'class': 'qi' + (q.id === S.fresh ? ' fresh' : ''),
+        text: t('q.item', { id: q.id, t: q.ts, n: unitsOf(q.lines) }),
+        onclick: function () { S.sel = 'Q'; S.qOrder = q; S.tnp = null; S.tnpManual = false; S.learnMsg = null; S.okKey = null; render(); } })]);
+    })) : h('p', { text: t('q.empty') });
+    var imp = null;
+    if (S.importOpen) {
+      var ta = h('textarea', { id: 'importTa', spellcheck: false, value: S.importText, oninput: function () { S.importText = this.value; } });
+      imp = h('div', {}, [h('label', { 'for': 'importTa', text: t('q.json') }), ta,
+        h('div', { 'class': 'row', style: 'margin-top:8px' }, [btn('q.add', 'primary', function () {
+          var r = PB.fromHolioOrder(S.importText);
+          if (r.ok) { pushOrder(r.orderId, r.lines); S.importErr = null; S.importText = ''; S.importOpen = false; S.importMsg = t('q.added', { id: r.orderId }); }
+          else S.importErr = r.errors;
+          render();
+        })]),
+        S.importErr ? h('ul', { 'class': 'msg err', role: 'alert' }, S.importErr.map(function (e) { return h('li', { text: t('err.' + e.code, { d: e.detail }) }); })) : null]);
+    }
+    return h('details', { 'class': 'card queue', open: S.qOpen, ontoggle: function () { S.qOpen = this.open; } }, [
+      h('summary', { text: t('q.title') + ' (' + S.queue.length + ')' }),
+      h('p', { 'class': 'small', text: t('q.note') }),
+      h('div', { 'class': 'row' }, [
+        btn('q.new', 'primary', function () { S.importMsg = null; var o = PB.randomOrder(S.rng, ++S.seq); pushOrder(o.id, o.lines); render(); }),
+        btn(S.auto ? 'q.autoOn' : 'q.autoOff', '', function () { setAuto(!S.auto); render(); }, { 'aria-pressed': String(S.auto) }),
+        btn('q.import', '', function () { S.importOpen = !S.importOpen; S.importErr = null; render(); }, { 'aria-expanded': String(S.importOpen) })
+      ]),
+      S.importMsg ? h('p', { 'class': 'msg ok', role: 'status', text: S.importMsg }) : null,
+      imp, h('p', { 'class': 'small', text: t('q.count', { n: S.queue.length }) }), list]);
+  }
+
+  // ---------------------------------------------------------- missing dimensions
+  function missingCards(rec) {
+    var out = [];
+    rec.missing.forEach(function (id) {
+      var kids = [h('div', { 'class': 'head' }, [h('h2', { text: t('dims.missing', { item: itemName(id) }) }), badge('AMBER_MISSING_DIMS')])];
+      if (S.tnpManual) kids.push(h('p', { 'class': 'msg err', role: 'alert', text: t('dims.tnpManual') }));
+      kids.push(h('h3', { text: t('dims.enter') }));
+      function save() {
+        var v = PB.validateDims(S.dimIn.L, S.dimIn.W, S.dimIn.H);
+        if (!v.ok) { S.dimErr = true; render(); return; }
+        S.dims[id] = { L: v.L, W: v.W, H: v.H, estimated: false }; persistDims();
+        S.dimErr = false; S.tnpManual = false; S.dimIn = { L: '', W: '', H: '' }; render();
+      }
+      var ae = document.activeElement;
+      if (!(ae && ae.id && ae.id.indexOf('dim') === 0)) S.focusId = 'dimL';
+      var row = ['L', 'W', 'H'].map(function (a) {
+        return h('div', {}, [h('label', { 'for': 'dim' + a, text: t('dims.' + a) }),
+          h('input', { id: 'dim' + a, type: 'number', min: 0, step: 'any', inputmode: 'decimal', value: S.dimIn[a], oninput: function () { S.dimIn[a] = this.value; },
+          onkeydown: function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); S.dimIn[a] = this.value; save(); } } })]);
+      });
+      row.push(btn('dims.save', 'primary', save));
+      kids.push(h('div', { 'class': 'row dims-row' }, row));
+      if (S.dimErr) kids.push(h('p', { 'class': 'msg err', role: 'alert', text: t('dims.invalid') }));
+      kids.push(h('h3', { text: t('dims.tnp'), style: 'margin-top:12px' }));
+      kids.push(btn('dims.tnpStart', '', function () { S.tnp = { sku: id, tries: 0 }; S.tnpManual = false; render(); }));
+      out.push(h('div', { 'class': 'card amber' }, kids));
+    });
+    return h('div', {}, out);
+  }
+  function tnpCard() {
+    var p = PB.tnpDims(S.tnp.tries);
+    return h('div', { 'class': 'card amber' }, [
+      h('div', { 'class': 'head' }, [h('h2', { text: t('dims.tnp') }), badge('AMBER_PROVISIONAL')]),
+      h('p', { text: t('dims.tnpTry', { n: S.tnp.tries + 1, dims: p.L + '×' + p.W + '×' + p.H }) }),
+      h('div', { 'class': 'row' }, [
+        btn('btn.fit', 'primary', function () {
+          S.dims[S.tnp.sku] = { L: p.L, W: p.W, H: p.H, estimated: true }; persistDims(); S.tnp = null; render();
+        }),
+        btn('btn.nofit', 'danger', function () {
+          S.tnp.tries++;
+          if (S.tnp.tries >= PB.TNP.maxTries) { S.tnp = null; S.tnpManual = true; }
+          render();
+        }),
+        btn('dims.cancel', '', function () { S.tnp = null; render(); })
+      ])
+    ]);
+  }
+
+  // ---------------------------------------------------------------- result card
+  function resultCard(rec, lines, opts, key, title) {
+    var r = rec.recommended, m = r.metrics, box = r.box;
+    var big = [['result.total', f(m.totalCost) + ' NOK', ''], ['result.chargeable', f(m.chargeableKg) + ' ' + t('unit.kg'), ''], ['result.air', f(m.airPct) + ' %', '']];
+    var small = [['result.freight', f(m.freightNOK, 0) + ' NOK'], ['result.filler', f(m.fillerLitres) + ' ' + t('unit.l')]];
+    var kids = [h('div', { 'class': 'head' }, [h('h2', { text: title }), badge(rec.state)]),
+      h('div', { 'class': 'boxname hero', text: boxLabel(box) }),
+      h('p', { 'class': 'boxsize', text: boxSize(box) + ' ' + t('unit.cm') })];
+    if (rec.state === 'GREEN_VERIFIED') kids.push(h('p', { 'class': 'packer ' + (S.okKey === key ? 'done' : 'wait'), role: 'status',
+      text: S.okKey === key ? t('packer.done') : t('packer.wait') }));
+    if (rec.savingsNOK !== null && rec.savingsNOK > 0) kids.push(h('div', { 'class': 'savebar' }, [
+      h('strong', { text: t('result.savings') + ': ' + f(rec.savingsNOK) + ' NOK (' + f(rec.savingsPct) + ' %)' }),
+      h('span', { text: t('result.airBeforeAfter') + ': ' + f(rec.airBefore) + ' % → ' + f(rec.airAfter) + ' %' })]));
+    kids.push(h('dl', { 'class': 'm big' }, big.map(function (d) { return h('div', {}, [h('dt', { text: t(d[0]) }), h('dd', { text: d[1] })]); })));
+    kids.push(h('p', { 'class': 'small', text: small.map(function (d) { return t(d[0]) + ' ' + d[1]; }).join(' · ') }));
+    if (rec.savingsNOK === null) kids.push(h('p', { 'class': 'small', text: t('result.noBaseline') }));
+    if (rec.margin > 0) kids.push(h('p', { 'class': 'msg', text: t('result.margin', { n: f(rec.margin) }) }));
+    if (rec.state === 'AMBER_PROVISIONAL' && !S.tnp) kids.push(h('p', { 'class': 'msg err', text: t('dims.provisional') }));
+    kids.push(h('div', { 'class': 'result-grid' }, [
+      h('div', { 'class': 'result-main' }, [stepsBlock(r, rec, opts, key)]),
+      h('div', { 'class': 'result-side' }, [
+        proofBlock(r),
+        vizBlock(r, key),
+        h('details', { 'class': 'more' }, [h('summary', { text: t('why.title') }),
+          h('p', { 'class': 'small', text: t('viz.iso') }), V.iso(r.box, r.placements, t('viz.aria')), whyBlock(rec)])])
+    ]));
+    return h('div', { 'class': 'card ' + stateColor(rec.state) }, kids);
+  }
+
+  function proofBlock(r) {
+    var order = ['bounds', 'overlap', 'items', 'orientation', 'weight', 'fragile'], c = r.verify.checks;
+    return h('div', {}, [h('h3', { text: t('proof.title') }),
+      h('ul', { 'class': 'chips proof' }, order.map(function (k) { return h('li', { text: (c[k] ? '✓ ' : '✗ ') + t('proof.' + k) }); }))]);
+  }
+
+  function vizBlock(r, key) {
+    var zs = PB.layerZs(r.placements), idx = Math.min(S.layer[key] || 0, zs.length - 1);
+    var tabs = h('div', { 'class': 'layers', role: 'group', 'aria-label': t('viz.top') }, zs.map(function (z, i) {
+      return h('button', { type: 'button', text: t('viz.layer', { n: i + 1 }), 'aria-pressed': String(i === idx), onclick: function () { S.layer[key] = i; render(); } });
+    }));
+    var ids = []; r.placements.forEach(function (p) { if (ids.indexOf(p.itemId) < 0) ids.push(p.itemId); });
+    var legend = h('ul', { 'class': 'chips' }, ids.map(function (id) {
+      var li = h('li', { text: V.label(id) + ' ' + itemName(id) }); li.style.borderLeft = '10px solid ' + V.colorOf(id); return li;
+    }));
+    return h('div', {}, [h('h3', { text: t('viz.title') }), tabs,
+      h('p', { 'class': 'small', text: t('viz.top') + ' – ' + t('viz.layer', { n: idx + 1 }) }),
+      V.topView(r.box, r.placements, zs[idx], t('viz.aria')),
+      legend, h('p', { 'class': 'legend', text: t('viz.legendFragile') + ' · ' + t('viz.legendEmpty') })]);
+  }
+
+  function stepsBlock(r, rec, opts, key) {
+    var steps = PB.packSteps(r.placements, { margin: rec.margin });
+    var lis = [];
+    steps.forEach(function (st) {
+      var d = f(st.dims[0]) + '×' + f(st.dims[1]) + '×' + f(st.dims[2]) + (st.rotated ? ', ' + t('steps.rotated') : '');
+      var tk = key + ':' + st.n;
+      var txt = h('span', {}, [t('steps.item', { n: st.n, item: itemName(st.itemId), dims: d, pos: t('steps.pos', { x: f(st.x), y: f(st.y), z: st.layer }) })]);
+      if (st.fragile) txt.appendChild(h('span', { 'class': 'warn', text: '⚠ ' + t('steps.fragile') }));
+      var cb = h('input', { type: 'checkbox', checked: !!S.ticks[tk], 'aria-label': t('steps.tick') + ' ' + st.n,
+        onchange: function () { S.ticks[tk] = this.checked; this.parentNode.classList.toggle('done', this.checked); } });
+      lis.push(h('li', {}, [h('label', { 'class': 'step' + (S.ticks[tk] ? ' done' : '') }, [cb, txt])]));
+    });
+    if (r.metrics.fillerLitres > 0) lis.push(h('li', {}, [h('span', { 'class': 'step fill', text: t('steps.filler', { l: f(r.metrics.fillerLitres) }) })]));
+    return h('div', {}, [h('h3', { text: t('steps.title') }), h('ol', { 'class': 'steps' }, lis)]);
+  }
+
+  function whyBlock(rec) {
+    var r = rec.recommended, m = r.metrics, base = rec.baseline;
+    var text = base ? t('why.text', { box: boxLabel(r.box), size: boxSize(r.box), total: f(m.totalCost), base: f(base.metrics.totalCost), airBefore: f(rec.airBefore), airAfter: f(rec.airAfter) })
+      : t('why.textNoBase', { box: boxLabel(r.box), size: boxSize(r.box), total: f(m.totalCost), airAfter: f(rec.airAfter) });
+    var kids = [h('p', { text: text })];
+    if (rec.reasonCode === 'cheaper_freight_bracket') kids.push(h('p', { text: t('why.smallest', { box: boxLabel(rec.smallest.box), f1: f(rec.smallest.metrics.freightNOK, 0), f2: f(m.freightNOK, 0) }) }));
+    kids.push(h('p', { 'class': 'small', text: t('why.verified') }));
+    kids.push(h('h3', { text: t('why.rejected') }));
+    kids.push(h('ul', { 'class': 'chips' }, rec.rejected.map(function (x) {
+      return h('li', { text: x.boxId + ': ' + t('reason.' + x.reason) });
+    })));
+    return h('div', {}, kids);
+  }
+
+  function resetLearning() {
+    S.rejects = {}; S.dims = {}; persistRejects(); persistDims(); S.tnp = null; S.tnpManual = false;
+    S.learnMsg = { ok: true, text: t('learn.resetDone') }; S.mgrCache = {}; S.mgr = { status: 'idle', best: null, progress: 0 };
+    render();
+  }
+  /* "Passet" = one tap: confirm and, for a queued order, remove it and open the next one. */
+  function confirmFit() {
+    S.learnMsg = { ok: true, text: t('learn.confirmed') };
+    S.okKey = curOrder().id;
+    if (S.sel === 'Q' && S.qOrder) {
+      var i = -1;
+      S.queue.forEach(function (q, k) { if (q.id === S.qOrder.id) i = k; });
+      if (i >= 0) S.queue.splice(i, 1);
+      var next = S.queue[i] || S.queue[i - 1] || null;
+      if (next) S.qOrder = next; else { S.qOrder = null; S.sel = 'O1001'; }
+    }
+    render();
+    window.scrollTo(0, 0);
+  }
+  function actionBar(lines) {
+    var margin = PB.marginFor(S.rejects, lines);
+    var kids = [h('div', { 'class': 'row' }, [
+      btn('btn.fit', 'primary', confirmFit),
+      btn('btn.nofit', 'danger', function () {
+        S.rejects = PB.addReject(S.rejects, lines); persistRejects(); S.okKey = null;
+        S.learnMsg = { ok: false }; render();
+      })
+    ])];
+    var lm = S.learnMsg;
+    if (lm) kids.push(h('p', { 'class': 'msg ok', role: 'status', text: lm.ok ? lm.text : t('learn.applied', { n: f(PB.marginFor(S.rejects, lines)) }) }));
+    else if (margin > 0) kids.push(h('p', { 'class': 'msg ok', text: t('learn.applied', { n: f(margin) }) }));
+    return h('div', { 'class': 'actionbar' }, kids);
+  }
+
+  // ------------------------------------------------------------------ manager view
+  function managerRows() {
+    return PB.ORDERS.map(function (o) {
+      var opts = optsFor(o.lines), s = PB.solve(o.lines, opts), row = { id: o.id, s: s, lines: o.lines, opts: opts };
+      if (s.state === 'AMBER_MISSING_DIMS') { row.status = 'AMBER_MISSING_DIMS'; return row; }
+      if (s.state === 'RED_CANNOT_PACK') { row.status = 'RED_CANNOT_PACK'; return row; }
+      var ps = s.state === 'NEEDS_SPLIT' ? s.split.parcels.map(function (p) { return p.rec; }) : [s.rec];
+      var inner = 0, item = 0, kg = 0, fr = 0, tot = 0;
+      ps.forEach(function (r) { var m = r.recommended.metrics; inner += m.innerVol; item += m.itemVol; kg += m.chargeableKg; fr += m.freightNOK; tot += m.totalCost; });
+      row.box = ps.map(function (r) { return r.recommended.box.id; }).join('+');
+      row.air = (inner - item) / inner * 100; row.kg = kg; row.fr = fr; row.tot = tot;
+      row.sav = s.state === 'NEEDS_SPLIT' ? null : s.rec.savingsNOK;
+      row.before = s.state === 'NEEDS_SPLIT' ? null : s.rec.airBefore;
+      row.status = s.state === 'NEEDS_SPLIT' ? (s.split.provisional ? 'AMBER_PROVISIONAL' : 'GREEN_VERIFIED') : s.rec.state;
+      row.split = s.state === 'NEEDS_SPLIT';
+      return row;
+    });
+  }
+
+  function viewLeader() {
+    var rows = managerRows(), tk = 0, tf = 0, tt = 0, ts = 0;
+    var body = rows.map(function (r) {
+      var dash = '–';
+      if (r.box === undefined) {
+        return h('tr', {}, [h('td', { text: r.id }), h('td', { text: dash }), h('td', { text: dash }), h('td', { text: dash }), h('td', { text: dash }), h('td', { text: dash }), h('td', { text: dash }), h('td', {}, [badge(r.status)])]);
+      }
+      tk += r.kg; tf += r.fr; tt += r.tot; if (r.sav !== null) ts += r.sav;
+      return h('tr', {}, [h('td', { text: r.id }), h('td', { text: r.split ? t('result.parcels', { n: r.s.split.parcelCount }) + ' (' + r.box + ')' : r.box }),
+        h('td', { text: f(r.air) }), h('td', { text: f(r.kg) }), h('td', { text: f(r.fr, 0) }), h('td', { text: f(r.tot) }),
+        h('td', { text: r.sav === null ? dash : f(r.sav), 'class': r.sav > 0 ? 'save' : '' }), h('td', {}, [badge(r.status)])]);
+    });
+    var heads = ['col.order', 'col.box', 'col.air', 'col.kg', 'col.freight', 'col.total', 'col.savings', 'col.status'];
+    var table = h('div', { 'class': 'tablewrap' }, [h('table', {}, [
+      h('thead', {}, [h('tr', {}, heads.map(function (k) { return h('th', { scope: 'col', text: t(k) }); }))]),
+      h('tbody', {}, body),
+      h('tfoot', {}, [h('tr', {}, [h('td', { text: t('mgr.totals') }), h('td', { text: '' }), h('td', { text: '' }), h('td', { text: f(tk) }), h('td', { text: f(tf, 0) }), h('td', { text: f(tt) }), h('td', { text: f(ts) }), h('td', { text: '' })])])
+    ])]);
+    var chartRows = rows.filter(function (r) { return r.box !== undefined; }).map(function (r) { return { label: r.id, before: r.before === undefined ? null : r.before, after: r.air }; });
+    var hl = PB.headline(rows.map(function (r) { return r.s; }));
+    return [hl.n ? h('div', { 'class': 'card green mgr-head' }, [h('p', { 'class': 'boxname save', role: 'status',
+        text: t('mgr.headline', { nok: f(hl.nok), l: f(hl.litres), n: hl.n }) })]) : null,
+      h('div', { 'class': 'card mgr-table' }, [h('h2', { text: t('mgr.title') }), table]),
+      h('div', { 'class': 'card mgr-chart' }, [h('h2', { text: t('mgr.chart') }), V.bars(chartRows, { before: t('chart.before'), after: t('chart.after') }, t('mgr.chart'))]),
+      finderCard()];
+  }
+
+  function finderCard() {
+    var m = S.mgr, kids = [h('h2', { text: t('mgr.finder') }), h('p', { 'class': 'small', text: t('mgr.finderHelp') })];
+    if (m.status === 'running') kids.push(h('p', { 'class': 'msg', role: 'status', text: t('mgr.calc') + ' ' + Math.round(m.progress * 100) + ' %' }));
+    else if (m.status === 'done') {
+      if (m.best) kids.push(h('p', { 'class': 'msg ok', role: 'status', text: t('mgr.suggest', { dims: m.best.cand.L + '×' + m.best.cand.W + '×' + m.best.cand.H, nok: f(m.best.savings), l: f(m.best.litres), n: m.best.n }) }));
+      else kids.push(h('p', { 'class': 'msg', role: 'status', text: t('mgr.none') }));
+    }
+    kids.push(btn('mgr.run', 'primary', function () { runFinder(); }, m.status === 'running' ? { disabled: true } : null));
+    kids.push(h('p', { 'class': 'small', text: t('mgr.skipped') }));
+    return h('div', { 'class': 'card mgr-finder' }, kids);
+  }
+
+  function runFinder() {
+    var rows = managerRows(), base = [], sig = JSON.stringify([S.dims, S.rejects]);
+    rows.forEach(function (r) {
+      var tt = PB.solveTotals(r.s);
+      if (r.s.state !== 'AMBER_MISSING_DIMS' && tt && r.s.rec.state !== 'AMBER_PROVISIONAL') base.push({ id: r.id, lines: r.lines, opts: r.opts, total: tt.total, litres: tt.litres });
+    });
+    var cands = PB.candidateBoxes(), i = 0, best = null, t0 = Date.now(), chunk = 10;
+    S.mgr = { status: 'running', best: null, progress: 0 };
+    render();
+    (function step() {
+      var end = Math.min(cands.length, i + chunk);
+      for (; i < end; i++) {
+        var c = cands[i], tot = { savings: 0, litres: 0, n: 0 };
+        base.forEach(function (b) {
+          var key = sig + '|' + b.id + '|' + c.id, hit = S.mgrCache[key];
+          if (!hit) {
+            var r = PB.evalCandidate(c, [b]);
+            hit = S.mgrCache[key] = r;
+          }
+          tot.savings += hit.savings; tot.litres += hit.litres; tot.n += hit.n;
+        });
+        if (tot.savings > 1e-9 && (!best || tot.savings > best.savings + 1e-9 || (Math.abs(tot.savings - best.savings) <= 1e-9 && c.L * c.W * c.H < best.cand.L * best.cand.W * best.cand.H))) {
+          best = { cand: c, savings: tot.savings, litres: tot.litres, n: tot.n };
+        }
+      }
+      if (i < cands.length) { S.mgr.progress = i / cands.length; if (S.tab === 'leader') render(); setTimeout(step, 0); }
+      else {
+        S.mgr = { status: 'done', best: best, progress: 1 };
+        window.__pbFinderMs = Date.now() - t0;
+        if (S.tab === 'leader') render();
+      }
+    })();
+  }
+
+  // ----------------------------------------------------------------- self-test
+  function runTests(heavy) {
+    S.st.running = true; render();
+    setTimeout(function () {
+      S.st.results = T.run(PB, I18N, { heavy: heavy }); S.st.fuzz = heavy; S.st.running = false; render();
+    }, 30);
+  }
+  function viewSelftest() {
+    var res = S.st.results || [], pass = res.filter(function (r) { return r.pass; }).length;
+    var allOk = res.length > 0 && pass === res.length;
+    var kids = [h('h2', { text: t('st.title') }),
+      h('p', { id: 'stSummary', 'class': 'msg ' + (allOk ? 'ok' : 'err'), role: 'status', text: t('st.summary', { p: pass, t: res.length }) }),
+      S.st.fuzz ? null : h('p', { 'class': 'small', text: t('st.fuzzPending') }),
+      h('div', { 'class': 'row' }, [
+        btn('st.run', '', function () { runTests(S.st.fuzz); }, S.st.running ? { disabled: true } : null),
+        btn('st.runFuzz', 'primary', function () { runTests(true); }, S.st.running ? { disabled: true } : null)]),
+      S.st.running ? h('p', { 'class': 'msg', text: t('st.running') }) : null,
+      h('ul', { 'class': 'clean', id: 'stList' }, res.map(function (r) {
+        return h('li', {}, [h('span', { 'class': r.pass ? 'st-ok' : 'st-fail', text: (r.pass ? t('st.pass') : t('st.fail')) + ' ' }),
+          h('span', { text: r.id + ' ' + r.name + ' (' + Math.round(r.ms) + ' ms)' }), r.pass ? null : h('div', { 'class': 'small', text: r.msg })]);
+      }))];
+    return [h('div', { 'class': 'card' }, kids)];
+  }
+
+  // ------------------------------------------------------------------- start
+  function init() {
+    root = document.getElementById('app');
+    S.st.results = T.run(PB, I18N, { heavy: false });
+    window.__pb = { S: S, render: render };
+    if (!coarse()) S.focusId = 'scan';
+    render();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
+
+</script>
+</body>
+</html>
