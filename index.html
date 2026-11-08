@@ -122,7 +122,7 @@ span.step.fill{font-weight:700;cursor:default}
 details.more{margin-top:12px}
 details.more>summary,details.card>summary{cursor:pointer;min-height:48px;display:flex;align-items:center;font-weight:700}
 details.card>summary{padding:2px 0}
-.tag-test{font-size:.75rem;background:var(--amber-bg);color:var(--amber);border-radius:6px;padding:2px 7px;margin-left:8px}
+.tag-test{font-size:.75rem;background:var(--amber-bg);color:var(--amber);border-radius:var(--radius-sm);padding:2px 7px;margin-left:8px}
 
 /* action bar */
 .actionbar{position:sticky;bottom:0;z-index:20;background:var(--card);border:1px solid var(--line);border-top:3px solid var(--accent);
@@ -206,6 +206,13 @@ button.lang{min-width:48px;min-height:48px;padding:4px}
 
 .langs{margin-left:auto}
 @media (max-width:420px){.topcard .small{display:none}.topcard{padding:8px 10px}.topcard label{margin-bottom:2px}}
+
+/* taste pass: aligned digits, balanced headings, calmer table */
+body{font-variant-numeric:tabular-nums}
+h1,h2,h3,.savebar strong,.packer{text-wrap:balance}
+th{font-weight:600;letter-spacing:.04em}
+tbody tr:hover td{background:#f3f7fc}
+.card h2{letter-spacing:-.02em}
 
 </style>
 </head>

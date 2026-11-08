@@ -1,6 +1,46 @@
-1. Open `index.html` by double-clicking (works offline, file://). Language toggle NO | EN.
-2. Tabs: **Pakking** (live queue, JSON import, scanner, result, SVG views, steps, Passet / Passet ikke, missing dims), **Leder** (6-order table, bar chart, missing-box finder), **Selvtest** (T1-T20; T14 fuzz runs on button).
-3. Assumptions (all "testverdier", also in the in-app "Antakelser" panel): fragile +1 cm/axis, filler 0.12 NOK/L, outer = inner+1 cm, volumetric kg = outer cm³/5000, freight brackets 49-219 NOK, max 25 kg, baseline box B5.
-4. Reset learning and entered dims: button "Nullstill læring" (or clear localStorage keys `pakkbevis_rejects`, `pakkbevis_dims`).
-5. Edit the DATA section of `src/core.js` (ITEMS, BOXES, ORDERS), then `node build.js` to regenerate `index.html`; `node test.js` runs the tests; `node scripts/e2e.js` runs the browser checks.
-# PakkBevis
+# PakkBevis – Riktig eske. Bevist. / Right box. Proven.
+
+Warehouse tool for Holio challenge #5 ("Wrong box size"): it suggests the cheapest box that fits an order's items and **proves** the layout with an independent checker. One offline `index.html`, no server, no network, no AI. Norwegian and English UI. Synthetic test data only.
+
+## Run
+
+```bash
+open index.html        # or double-click; works offline (file://)
+```
+
+## What it does
+
+- **Packer (phone, 360–390 px):** pick or scan an order, get the box, cost, chargeable weight and air %, numbered packing steps and a layer view. "Passet" confirms; "Passet ikke" adds margin so the app learns.
+- **Manager (PC):** all orders in one table, savings vs the default box B5, air before/after chart, and a "missing box" finder that proposes one new box size.
+- **Edge cases:** orders that need splitting (max 4 parcels), missing item dimensions (enter once, or try-and-press), fragile items, live order queue, JSON order import, barcode/SKU scanner field.
+- **Selvtest tab:** 23 built-in tests (T14 is a fuzz test run on demand).
+
+## How it decides
+
+1. Deterministic 3D packing (extreme points, 6 rotations, fragile padding) tries each box.
+2. A separate verifier re-checks bounds, overlaps, items, orientation, weight and fragile rules. A box is shown as machine-verified only if it passes; otherwise the order is amber or red.
+3. Boxes are ranked by total cost: box + filler + freight (by chargeable weight, including volumetric).
+
+"Maskinkontrollert ✓" means the software check passed. The packer's tap on "Passet" is the physical confirmation.
+
+## Assumptions (all test values)
+
+Fragile +1 cm per axis · filler 0.12 NOK/L · outer box = inner + 1 cm · volumetric kg = outer cm³ / 5000 · freight 49–219 NOK in weight brackets, max 25 kg · baseline box B5. Also listed in the app under "Antakelser".
+
+## Develop
+
+Needs Node 22+. Edit `src/` (data lives in `src/core.js`), then:
+
+```bash
+node build.js            # inlines src/ into index.html
+node test.js             # 23 unit tests
+npm i && npx playwright install chromium
+node scripts/e2e.js      # browser checks (phone, desktop, blocked storage)
+node scripts/e2e-flow.js # one-tap flow checks
+```
+
+Reset learning and entered dimensions with "Nullstill læring", or clear the localStorage keys `pakkbevis_rejects` and `pakkbevis_dims`.
+
+## Limits
+
+The packer is a heuristic: it may miss a smaller box a perfect solver would find. Data is synthetic; real item sizes, box prices and freight rates will change the results.
